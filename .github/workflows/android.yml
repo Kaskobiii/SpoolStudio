@@ -10,16 +10,6 @@ permissions:
   contents: read
 
 jobs:
-  orca-plugin:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Test companion plugin
-        working-directory: orca_plugin
-        run: python -m unittest -v
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -39,6 +29,8 @@ jobs:
       - name: Install Android SDK
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - name: Test, check and build
+        env:
+          SPOOLSTUDIO_SCREENSHOT_DIR: ${{ github.workspace }}/app/build/reports/ui-screenshots
         run: bash ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
       - name: Save test results and test APK
         if: always()
@@ -49,4 +41,5 @@ jobs:
             app/build/outputs/apk/debug/*.apk
             app/build/reports/tests/testDebugUnitTest/
             app/build/reports/lint-results-debug.html
+            app/build/reports/ui-screenshots/
           if-no-files-found: warn

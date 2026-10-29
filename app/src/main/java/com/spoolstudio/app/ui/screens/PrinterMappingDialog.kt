@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,9 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -30,8 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,15 +40,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.ui.PrinterToolheadLiveStatus
 import com.spoolstudio.app.ui.components.filterSpoolmanDropdownFilaments
 import com.spoolstudio.app.ui.components.spoolmanDropdownListLabel
-import com.spoolstudio.app.ui.components.SpoolStudioLogo
+import com.spoolstudio.app.ui.components.SearchableDropdownDialog
+import com.spoolstudio.app.ui.components.spoolmanDropdownLabel
+import com.spoolstudio.app.ui.components.spoolmanDropdownDetails
 import com.spoolstudio.app.ui.theme.SpoolStudioColors
 import com.spoolstudio.app.ui.theme.SpoolStudioShape
 import com.spoolstudio.app.ui.theme.spoolStudioBackground
@@ -198,8 +193,6 @@ fun PrinterMappingDialog(
                                 text = "$assignedCount of 4 toolheads assigned",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = SpoolStudioColors.OnGraphiteMuted,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -237,8 +230,6 @@ fun PrinterMappingDialog(
                     ) {
                         Text(
                             text = "App labels",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                     }
                     OutlinedButton(
@@ -252,8 +243,6 @@ fun PrinterMappingDialog(
                     ) {
                         Text(
                             text = "SpoolLink",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -285,7 +274,7 @@ fun PrinterMappingDialog(
                     shape = SpoolStudioShape.Button,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(46.dp),
+                        .heightIn(min = 46.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = SpoolStudioColors.AccentCyan,
                         disabledContentColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.55f)
@@ -293,8 +282,6 @@ fun PrinterMappingDialog(
                 ) {
                     Text(
                         text = "Refresh toolhead status",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -342,235 +329,79 @@ private fun AssignToolheadSpoolDialog(
     }
     val filteredSpools = filterSpoolmanDropdownFilaments(assignableSpools, searchQuery)
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 82.dp),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 520.dp),
-                shape = SpoolStudioShape.Dialog,
-                colors = CardDefaults.cardColors(
-                    containerColor = SpoolStudioColors.Graphite
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 18.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Assign spool",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = SpoolStudioColors.OnGraphite
-                            )
-                            Text(
-                                text = toolheadLabel,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = SpoolStudioColors.GoldSoft
-                            )
-                        }
-
-                        IconButton(onClick = onDismiss) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                tint = SpoolStudioColors.OnGraphite
-                            )
-                        }
-                    }
-
-                    Text(
-                        text = "Manual assignment is temporary. Spools without UID data or v3 field conversion can be selected, but the printer may replace them after the next RFID read.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = SpoolStudioColors.OnGraphiteMuted
-                    )
-
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { onSearchQueryChange(it.take(60)) },
-                        placeholder = { Text("Search") },
-                        singleLine = true,
-                        shape = SpoolStudioShape.Field,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(54.dp),
-                        textStyle = MaterialTheme.typography.bodyMedium.copy(
-                            color = SpoolStudioColors.OnGraphite,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = SpoolStudioColors.OnGraphite,
-                            unfocusedTextColor = SpoolStudioColors.OnGraphite,
-                            focusedPlaceholderColor = SpoolStudioColors.OnGraphiteMuted,
-                            unfocusedPlaceholderColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.75f),
-                            focusedBorderColor = SpoolStudioColors.AccentCyan,
-                            unfocusedBorderColor = SpoolStudioColors.GraphiteMuted,
-                            cursorColor = SpoolStudioColors.AccentCyan,
-                            focusedContainerColor = SpoolStudioColors.GraphiteRaised.copy(alpha = 0.48f),
-                            unfocusedContainerColor = SpoolStudioColors.GraphiteRaised.copy(alpha = 0.48f)
-                        )
-                    )
-
-                    AssignSpoolRow(
-                        title = "Clear printer assignment",
-                        subtitle = "Keeps tag links",
-                        warningText = "RFID scans can assign it again",
-                        idText = "Empty",
-                        accentColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.35f),
-                        onClick = { onSpoolSelected(null) }
-                    )
-
-                    HorizontalDivider(color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.75f))
-
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 300.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        if (filteredSpools.isEmpty()) {
-                            item {
-                                Text(
-                                    text = if (assignableSpools.isEmpty()) {
-                                        "No Spoolman spools found."
-                                    } else {
-                                        "No spool matches the search."
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = SpoolStudioColors.OnGraphiteMuted,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(
-                                            SpoolStudioColors.GraphiteRaised.copy(alpha = 0.52f),
-                                            SpoolStudioShape.Small
-                                        )
-                                        .padding(horizontal = 12.dp, vertical = 10.dp)
-                                )
-                            }
-                        }
-                        items(filteredSpools) { spool ->
-                            val warningText = when {
-                                !spool.isPaxx12FieldFormat -> "Needs v3 conversion"
-                                spool.cardUids.isEmpty() -> "No UID stored"
-                                else -> null
-                            }
-                            AssignSpoolRow(
-                                title = spool.spoolmanName?.takeIf(String::isNotBlank) ?: spool.displayName,
-                                subtitle = spoolmanDropdownListLabel(spool),
-                                idText = "ID #${spool.id}",
-                                warningText = warningText,
-                                accentColor = resolveSpoolColor(spool.colorHex),
-                                onClick = { onSpoolSelected(spool.id) }
-                            )
-                        }
-                    }
-                }
+    SearchableDropdownDialog(
+        title = "Assign spool · $toolheadLabel",
+        searchQuery = searchQuery,
+        onSearchQueryChange = onSearchQueryChange,
+        items = filteredSpools,
+        itemLabel = ::spoolmanDropdownListLabel,
+        onItemSelected = { onSpoolSelected(it.id) },
+        onDismiss = onDismiss,
+        topContent = {
+            Text(
+                text = "Manual assignment is temporary. Spools without UID data or v3 field conversion can be selected, but the printer may replace them after the next RFID read.",
+                style = MaterialTheme.typography.bodySmall,
+                color = SpoolStudioColors.OnGraphiteMuted,
+                modifier = Modifier.padding(bottom = 10.dp)
+            )
+            AssignSpoolRow(
+                title = "Clear printer assignment",
+                subtitle = "Empty · Keeps tag links",
+                warningText = "RFID scans can assign it again",
+                accentColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.35f),
+                onClick = { onSpoolSelected(null) }
+            )
+            HorizontalDivider(
+                color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.75f),
+                modifier = Modifier.padding(top = 10.dp)
+            )
+        },
+        itemContent = { spool ->
+            val warningText = when {
+                !spool.isPaxx12FieldFormat -> "Needs v3 conversion"
+                spool.cardUids.isEmpty() -> "No UID stored"
+                else -> null
             }
+            AssignSpoolRow(
+                title = spoolmanDropdownLabel(spool),
+                subtitle = spoolmanDropdownDetails(spool),
+                warningText = warningText,
+                accentColor = resolveSpoolColor(spool.colorHex),
+                onClick = { onSpoolSelected(spool.id) }
+            )
         }
-    }
+    )
 }
 
 @Composable
 private fun AssignSpoolRow(
     title: String,
     subtitle: String,
-    idText: String,
     warningText: String? = null,
     accentColor: Color,
     onClick: () -> Unit
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
             .clip(SpoolStudioShape.Field)
             .background(SpoolStudioColors.GraphiteRaised.copy(alpha = 0.72f))
-            .border(
-                width = 1.dp,
-                color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f),
-                shape = SpoolStudioShape.Field
-            )
+            .border(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f), SpoolStudioShape.Field)
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.size(width = 56.dp, height = 60.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            SpoolStudioLogo(
-                color = accentColor,
-                logoSize = 48.dp,
-                showTitle = false,
-                modifier = Modifier.padding(top = 6.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = SpoolStudioColors.OnGraphite,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = SpoolStudioColors.OnGraphiteMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Modifier.size(16.dp).clip(CircleShape).background(accentColor)
+                .border(1.dp, SpoolStudioColors.OnGraphiteMuted, CircleShape)
+        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold, color = SpoolStudioColors.OnGraphite)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = SpoolStudioColors.OnGraphiteMuted)
             if (warningText != null) {
-                Text(
-                    text = warningText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = SpoolStudioColors.GoldSoft,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Text(warningText, style = MaterialTheme.typography.bodySmall, color = SpoolStudioColors.GoldSoft)
             }
-        }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Box(
-            modifier = Modifier
-                .clip(SpoolStudioShape.Small)
-                .background(SpoolStudioColors.Graphite.copy(alpha = 0.78f))
-                .border(
-                    width = 1.dp,
-                    color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.9f),
-                    shape = SpoolStudioShape.Small
-                )
-                .padding(horizontal = 10.dp, vertical = 6.dp)
-        ) {
-            Text(
-                text = idText,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = SpoolStudioColors.OnGraphite
-            )
         }
     }
 }

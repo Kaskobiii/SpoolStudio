@@ -6,7 +6,7 @@ import org.junit.Test
 
 class SpoolmanDropdownHelpersTest {
     @Test
-    fun spoolmanDropdownLabelUsesBrandNameAndMaterial() {
+    fun spoolmanDropdownLabelUsesCompactNameAndMaterial() {
         val spool = testSpool(
             id = 12,
             brand = "Generic",
@@ -14,7 +14,25 @@ class SpoolmanDropdownHelpersTest {
             material = "PLA"
         )
 
-        assertEquals("Generic - White - PLA", spoolmanDropdownLabel(spool))
+        assertEquals("White PLA", spoolmanDropdownLabel(spool))
+    }
+
+    @Test
+    fun compactLabelKeepsVariantWithoutRepeatingMaterial() {
+        val spool = testSpool(12, "Elegoo", "Black", "PLA").copy(variant = "Plus")
+        assertEquals("Black PLA Plus", spoolmanDropdownLabel(spool))
+        assertEquals("Black PLA Plus", spoolmanDropdownLabel(spool.copy(spoolmanName = "Black PLA Plus")))
+        assertEquals("Black PLA+", spoolmanDropdownLabel(spool.copy(spoolmanName = "Black PLA+")))
+        assertEquals("Planet Black PLA", spoolmanDropdownLabel(spool.copy(spoolmanName = "Planet Black", variant = "Basic")))
+    }
+
+    @Test
+    fun detailsIdentifyPhysicalSpoolsAndHandleUnknownWeight() {
+        val spool = testSpool(12, "Elegoo", "Black", "PLA")
+        assertEquals("ID #12 · 866.3 g remaining", spoolmanDropdownDetails(spool.copy(remainingWeight = 866.34f)))
+        assertEquals("ID #12 · 27 g remaining", spoolmanDropdownDetails(spool.copy(remainingWeight = 27f)))
+        assertEquals("ID #12 · Weight unknown", spoolmanDropdownDetails(spool.copy(remainingWeight = null)))
+        assertEquals("ID #12 · Weight unknown", spoolmanDropdownDetails(spool.copy(remainingWeight = Float.NaN)))
     }
 
     @Test

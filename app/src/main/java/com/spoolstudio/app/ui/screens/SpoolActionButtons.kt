@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -159,7 +159,7 @@ private fun PrimaryActionButton(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(SpoolStudioDimens.ButtonHeight),
+            .heightIn(min = SpoolStudioDimens.ButtonHeight),
         shape = SpoolStudioShape.Button,
         colors = ButtonDefaults.buttonColors(
             containerColor = SpoolStudioColors.AccentCyan,
@@ -189,7 +189,7 @@ private fun SecondaryActionButton(
         border = BorderStroke(1.3.dp, if (enabled) SpoolStudioColors.Gold else SpoolStudioColors.GraphiteMuted),
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp),
+            .heightIn(min = 48.dp),
         shape = SpoolStudioShape.Button,
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = if (enabled) Color.Transparent else SpoolStudioColors.GraphiteRaised.copy(alpha = 0.28f),
@@ -200,8 +200,7 @@ private fun SecondaryActionButton(
         Text(
             text,
             style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp, lineHeight = 16.sp),
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 2
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -235,7 +234,7 @@ fun PrinterMappingButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(40.dp),
+            .heightIn(min = 40.dp),
         shape = SpoolStudioShape.Button,
         border = BorderStroke(1.1.dp, SpoolStudioColors.GraphiteMuted),
         colors = ButtonDefaults.outlinedButtonColors(
@@ -246,8 +245,7 @@ fun PrinterMappingButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         Text(
             "Toolhead Status",
             style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp, lineHeight = 16.sp),
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -264,7 +262,7 @@ private fun DestructiveSpoolButton(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(40.dp),
+            .heightIn(min = 40.dp),
         shape = SpoolStudioShape.Button,
         border = BorderStroke(
             1.1.dp,
@@ -279,8 +277,7 @@ private fun DestructiveSpoolButton(
         Text(
             text,
             style = MaterialTheme.typography.labelLarge.copy(fontSize = 12.sp, lineHeight = 14.sp),
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 2
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -329,7 +326,7 @@ private fun CyanOutlineActionButton(
         ),
         modifier = modifier
             .fillMaxWidth()
-            .height(SpoolStudioDimens.ButtonHeight),
+            .heightIn(min = SpoolStudioDimens.ButtonHeight),
         shape = SpoolStudioShape.Button,
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = if (enabled) Color.Transparent else SpoolStudioColors.GraphiteRaised.copy(alpha = 0.28f),
@@ -340,8 +337,7 @@ private fun CyanOutlineActionButton(
         Text(
             text,
             style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp, lineHeight = 16.sp),
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1
+            fontWeight = FontWeight.SemiBold
         )
     }
 }

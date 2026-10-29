@@ -3,6 +3,8 @@ package com.spoolstudio.app.ui.components
 import android.graphics.Bitmap
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -25,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -34,8 +37,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.spoolstudio.app.ui.theme.SpoolStudioColors
 import com.spoolstudio.app.ui.theme.SpoolStudioShape
 
@@ -49,21 +50,18 @@ fun ColorPhotoDialog(
     onUseDetectedColor: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    BoundedDialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
-                .padding(horizontal = 28.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .testTag("color-photo-dialog-content"),
             shape = SpoolStudioShape.Dialog,
             elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
             colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite),
             border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -105,7 +103,7 @@ fun ColorPhotoDialog(
                                 .border(1.dp, SpoolStudioColors.GraphiteMuted, RoundedCornerShape(12.dp))
                         )
 
-                        Column {
+                        Column(Modifier.weight(1f)) {
                             Text(
                                 text = "#$hex",
                                 style = MaterialTheme.typography.bodyMedium,

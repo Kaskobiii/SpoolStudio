@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -62,6 +64,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.TextStyle
@@ -74,8 +77,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.spoolstudio.app.data.local.BrandDatabase
 import com.spoolstudio.app.data.local.MaterialDatabase
 import com.spoolstudio.app.data.local.VariantDatabase
@@ -83,9 +84,11 @@ import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.domain.models.displayMaterialWithModifier
 import com.spoolstudio.app.ui.SpoolMode
 import com.spoolstudio.app.ui.components.ColorSelector
+import com.spoolstudio.app.ui.components.BoundedDialog
 import com.spoolstudio.app.ui.components.SearchableDropdownDialog
 import com.spoolstudio.app.ui.components.SpoolStudioLogo
 import com.spoolstudio.app.ui.components.SpoolmanFilamentDropdown
+import com.spoolstudio.app.ui.components.OwnerFilterDropdown
 import com.spoolstudio.app.ui.theme.SpoolStudioColors
 import com.spoolstudio.app.ui.theme.SpoolStudioDimens
 import com.spoolstudio.app.ui.theme.SpoolStudioShape
@@ -127,8 +130,7 @@ fun SpoolFormCard(
             .padding(horizontal = SpoolStudioDimens.ScreenHorizontalPadding, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        CompactDropdownRow(
-            label = "Show owner",
+        OwnerFilterDropdown(
             value = ownerFilter?.ifBlank { "Unassigned" } ?: "All owners",
             options = listOf("All owners", "Unassigned") + ownerNames,
             onSelected = { ownerFilter = when (it) {
@@ -469,21 +471,19 @@ private fun SpoolDataCard(
     }
 
     if (showColorDialog) {
-        Dialog(
-            onDismissRequest = { showColorDialog = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
+        BoundedDialog(onDismissRequest = { showColorDialog = false }) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 28.dp),
+                    .testTag("color-dialog-content"),
                 shape = SpoolStudioShape.Dialog,
                 colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite),
                 elevation = CardDefaults.cardElevation(defaultElevation = 14.dp),
                 border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
             ) {
                 Column(
-                    modifier = Modifier.padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 14.dp),
+                    modifier = Modifier.verticalScroll(rememberScrollState())
+                        .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(
@@ -495,7 +495,8 @@ private fun SpoolDataCard(
                             text = "Color",
                             style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 22.sp),
                             fontWeight = FontWeight.SemiBold,
-                            color = SpoolStudioColors.OnGraphite
+                            color = SpoolStudioColors.OnGraphite,
+                            modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { showColorDialog = false }) {
                             Icon(
@@ -566,8 +567,6 @@ private fun CompactDropdownRow(
                 style = compactValueStyle(),
                 color = if (enabled) SpoolStudioColors.Ink else SpoolStudioColors.InkMuted.copy(alpha = 0.65f),
                 textAlign = TextAlign.Start,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
             Icon(
@@ -669,21 +668,19 @@ private fun BrandDialog(
     }
     val focusRequester = remember { FocusRequester() }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    BoundedDialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 28.dp),
+                .testTag("brand-dialog-content"),
             shape = SpoolStudioShape.Dialog,
             colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite),
             elevation = CardDefaults.cardElevation(defaultElevation = 14.dp),
             border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
         ) {
             Column(
-                modifier = Modifier.padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 14.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+                    .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(
@@ -695,7 +692,8 @@ private fun BrandDialog(
                         text = "Brand",
                         style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 22.sp),
                         fontWeight = FontWeight.SemiBold,
-                        color = SpoolStudioColors.OnGraphite
+                        color = SpoolStudioColors.OnGraphite,
+                        modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
@@ -744,9 +742,7 @@ private fun BrandDialog(
                     )
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 190.dp)
-                            .verticalScroll(rememberScrollState()),
+                            .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
                         uniqueSuggestions.forEach { suggestion ->
@@ -772,8 +768,6 @@ private fun BrandDialog(
                                     text = suggestion,
                                     style = compactValueStyle(),
                                     color = SpoolStudioColors.OnGraphite,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f)
                                 )
                                 Icon(
@@ -1006,21 +1000,19 @@ private fun EmptySpoolWeightDialog(
     var draft by remember(value) { mutableStateOf(TextFieldValue(value, selection = TextRange(0, value.length))) }
     val focusRequester = remember { FocusRequester() }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    BoundedDialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 28.dp),
+                .testTag("empty-weight-dialog-content"),
             shape = SpoolStudioShape.Dialog,
             colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite),
             elevation = CardDefaults.cardElevation(defaultElevation = 14.dp),
             border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
         ) {
             Column(
-                modifier = Modifier.padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 14.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+                    .padding(start = 14.dp, top = 10.dp, end = 14.dp, bottom = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(
@@ -1032,7 +1024,8 @@ private fun EmptySpoolWeightDialog(
                         text = "Empty spool weight",
                         style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, lineHeight = 22.sp),
                         fontWeight = FontWeight.SemiBold,
-                        color = SpoolStudioColors.OnGraphite
+                        color = SpoolStudioColors.OnGraphite,
+                        modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
@@ -1084,9 +1077,7 @@ private fun EmptySpoolWeightDialog(
                     )
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 190.dp)
-                            .verticalScroll(rememberScrollState()),
+                            .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
                         suggestions.forEach { suggestion ->
@@ -1112,8 +1103,6 @@ private fun EmptySpoolWeightDialog(
                                     text = suggestion.label,
                                     style = compactValueStyle(),
                                     color = SpoolStudioColors.OnGraphite,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f)
                                 )
                                 Icon(
@@ -1396,25 +1385,44 @@ private fun CompactDataRow(
         if (showTopDivider) {
             CompactDivider()
         }
-        Row(
-            modifier = rowModifier.padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 18.sp),
-                color = SpoolStudioColors.Ink,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1.02f)
-            )
-            Row(
-                modifier = Modifier.weight(1.38f),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically,
-                content = valueContent
-            )
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            if (LocalDensity.current.fontScale >= 1.5f || maxWidth < 260.dp) {
+                Column(
+                    modifier = rowModifier.padding(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 18.sp),
+                        color = SpoolStudioColors.Ink
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically,
+                        content = valueContent
+                    )
+                }
+            } else {
+                Row(
+                    modifier = rowModifier.padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 18.sp),
+                        color = SpoolStudioColors.Ink,
+                        modifier = Modifier.weight(1.02f)
+                    )
+                    Row(
+                        modifier = Modifier.weight(1.38f),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically,
+                        content = valueContent
+                    )
+                }
+            }
         }
         if (showBottomDivider) {
             CompactDivider()
@@ -1571,38 +1579,58 @@ private fun CompactTemperatureRow(
     onMinChange: (String) -> Unit,
     onMaxChange: (String) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 18.sp),
-            color = SpoolStudioColors.Ink,
-            modifier = Modifier.width(58.dp)
-        )
-
-        TemperatureStepper(
-            value = minValue,
-            onDecrease = { onMinChange(adjustTemperature(minValue, -1)) },
-            onIncrease = { onMinChange(adjustTemperature(minValue, 1)) },
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            text = "-",
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp),
-            fontWeight = FontWeight.SemiBold,
-            color = SpoolStudioColors.GoldDark
-        )
-        TemperatureStepper(
-            value = maxValue,
-            onDecrease = { onMaxChange(adjustTemperature(maxValue, -1)) },
-            onIncrease = { onMaxChange(adjustTemperature(maxValue, 1)) },
-            modifier = Modifier.weight(1f)
-        )
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val largeText = LocalDensity.current.fontScale >= 1.5f || maxWidth < 260.dp
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 18.sp),
+                color = SpoolStudioColors.Ink
+            )
+            if (largeText) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Min", style = compactValueStyle(), modifier = Modifier.weight(0.35f))
+                    TemperatureStepper(
+                        value = minValue,
+                        valueTag = "temperature-${label.lowercase(java.util.Locale.ROOT)}-min",
+                        onDecrease = { onMinChange(adjustTemperature(minValue, -1)) },
+                        onIncrease = { onMinChange(adjustTemperature(minValue, 1)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Max", style = compactValueStyle(), modifier = Modifier.weight(0.35f))
+                    TemperatureStepper(
+                        value = maxValue,
+                        valueTag = "temperature-${label.lowercase(java.util.Locale.ROOT)}-max",
+                        onDecrease = { onMaxChange(adjustTemperature(maxValue, -1)) },
+                        onIncrease = { onMaxChange(adjustTemperature(maxValue, 1)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TemperatureStepper(
+                        value = minValue,
+                        valueTag = "temperature-${label.lowercase(java.util.Locale.ROOT)}-min",
+                        onDecrease = { onMinChange(adjustTemperature(minValue, -1)) },
+                        onIncrease = { onMinChange(adjustTemperature(minValue, 1)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text("–", style = MaterialTheme.typography.bodyMedium, color = SpoolStudioColors.GoldDark)
+                    TemperatureStepper(
+                        value = maxValue,
+                        valueTag = "temperature-${label.lowercase(java.util.Locale.ROOT)}-max",
+                        onDecrease = { onMaxChange(adjustTemperature(maxValue, -1)) },
+                        onIncrease = { onMaxChange(adjustTemperature(maxValue, 1)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -1611,11 +1639,12 @@ private fun TemperatureStepper(
     value: String,
     onDecrease: () -> Unit,
     onIncrease: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    valueTag: String? = null
 ) {
     Row(
         modifier = modifier
-            .height(32.dp)
+            .heightIn(min = 40.dp)
             .clip(SpoolStudioShape.Small)
             .background(SpoolStudioColors.SurfaceRaised)
             .border(1.dp, SpoolStudioColors.OutlineSoft, SpoolStudioShape.Small),
@@ -1633,9 +1662,8 @@ private fun TemperatureStepper(
             style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, lineHeight = 16.sp),
             fontWeight = FontWeight.SemiBold,
             color = SpoolStudioColors.Ink,
-            maxLines = 1,
             textAlign = TextAlign.Center,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f).then(valueTag?.let { Modifier.testTag(it) } ?: Modifier)
         )
         Box(
             modifier = Modifier
@@ -1655,7 +1683,7 @@ private fun TemperatureStepButton(
     Box(
         modifier = Modifier
             .width(28.dp)
-            .height(32.dp)
+            .heightIn(min = 40.dp)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -1735,20 +1763,16 @@ private fun SpoolHeroPanel(
             onRefreshSpoolmanCatalogIfStale = onRefreshSpoolmanCatalogIfStale
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        val spoolGraphic: @Composable (Modifier) -> Unit = { contentModifier ->
             SpoolStudioLogo(
                 color = spoolColor,
                 logoSize = 200.dp,
                 showTitle = false,
-                modifier = Modifier
-                    .weight(1.18f)
-                    .defaultMinSize(minHeight = 156.dp)
+                modifier = contentModifier.defaultMinSize(minHeight = 156.dp)
             )
 
+        }
+        val spoolStatus: @Composable (Modifier) -> Unit = { contentModifier ->
             StatusInfoPanel(
                 newMode = isCreateMode,
                 cardUid = resolveDisplayedCardUid(
@@ -1762,10 +1786,25 @@ private fun SpoolHeroPanel(
                 remainingWeight = remainingText.takeIf { it.isNotBlank() }?.let { "${trimWeightZeros(it)} g" } ?: "-",
                 remainingPercent = remainingPercent,
                 remainingColor = remainingColor,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(bottom = 12.dp)
+                modifier = contentModifier.padding(bottom = 12.dp)
             )
+        }
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            if (maxWidth < 360.dp || LocalDensity.current.fontScale >= 1.5f) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    spoolGraphic(Modifier.fillMaxWidth())
+                    spoolStatus(Modifier.fillMaxWidth())
+                }
+            } else {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    spoolGraphic(Modifier.weight(1.18f))
+                    spoolStatus(Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -1783,7 +1822,7 @@ private fun StatusInfoPanel(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.height(184.dp),
+        modifier = modifier.heightIn(min = 184.dp).testTag("status-info-panel"),
         shape = SpoolStudioShape.Small,
         colors = CardDefaults.cardColors(containerColor = SpoolStudioColors.Graphite.copy(alpha = 0.74f)),
         border = BorderStroke(
@@ -1794,13 +1833,13 @@ private fun StatusInfoPanel(
         Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 9.dp)
         ) {
-            StatusUidLine(cardUid.ifBlank { "-" }, modifier = Modifier.height(21.dp))
+            StatusUidLine(cardUid.ifBlank { "-" }, modifier = Modifier.heightIn(min = 21.dp))
             Spacer(modifier = Modifier.height(6.dp))
             StatusPanelDivider()
             Spacer(modifier = Modifier.height(6.dp))
             if (newMode) {
                 Column(
-                    modifier = Modifier.height(44.dp),
+                    modifier = Modifier.heightIn(min = 44.dp),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     Text(
@@ -1821,13 +1860,13 @@ private fun StatusInfoPanel(
                     )
                 }
             } else {
-                StatusInfoLine("First use", firstUse, modifier = Modifier.height(28.dp))
-                StatusInfoLine("Last use", lastUse, modifier = Modifier.height(28.dp))
+                StatusInfoLine("First use", firstUse, modifier = Modifier.heightIn(min = 28.dp))
+                StatusInfoLine("Last use", lastUse, modifier = Modifier.heightIn(min = 28.dp))
             }
             Spacer(modifier = Modifier.height(8.dp))
             StatusPanelDivider()
             Spacer(modifier = Modifier.height(8.dp))
-            StatusInfoLine("Initial", initialWeight, modifier = Modifier.height(21.dp))
+            StatusInfoLine("Initial", initialWeight, modifier = Modifier.heightIn(min = 21.dp))
             StatusInfoLine(
                 "Remaining",
                 buildString {
@@ -1839,7 +1878,7 @@ private fun StatusInfoPanel(
                     }
                 },
                 remainingColor,
-                modifier = Modifier.height(33.dp)
+                modifier = Modifier.heightIn(min = 33.dp)
             )
             RemainingFillBar(
                 percent = remainingPercent ?: 0f,
@@ -1895,8 +1934,7 @@ private fun StatusUidLine(
             text = "UID",
             style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, lineHeight = 14.sp),
             color = SpoolStudioColors.OnGraphiteMuted,
-            maxLines = 1,
-            modifier = Modifier.width(28.dp)
+            modifier = Modifier.widthIn(min = 28.dp)
         )
         Text(
             text = value,
@@ -1904,9 +1942,7 @@ private fun StatusUidLine(
             fontWeight = FontWeight.SemiBold,
             color = SpoolStudioColors.OnGraphite,
             textAlign = TextAlign.End,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f).testTag("status-uid-value")
         )
     }
 }
@@ -1927,7 +1963,6 @@ private fun StatusInfoLine(
             text = label,
             style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, lineHeight = 14.sp),
             color = SpoolStudioColors.OnGraphiteMuted,
-            maxLines = 1,
             modifier = Modifier.weight(1.08f)
         )
         Text(
@@ -1936,8 +1971,9 @@ private fun StatusInfoLine(
             fontWeight = FontWeight.SemiBold,
             color = valueColor,
             textAlign = TextAlign.End,
-            maxLines = 2,
-            modifier = Modifier.weight(0.92f)
+            modifier = Modifier.weight(0.92f).then(
+                if (label == "Remaining") Modifier.testTag("status-remaining-value") else Modifier
+            )
         )
     }
 }

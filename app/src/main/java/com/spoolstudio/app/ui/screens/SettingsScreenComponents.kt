@@ -9,7 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.draw.clip
@@ -112,7 +113,7 @@ private fun <T> SettingsOptionDropdown(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(46.dp),
+                    .heightIn(min = 46.dp).padding(vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -130,7 +131,6 @@ private fun <T> SettingsOptionDropdown(
                         fontWeight = FontWeight.SemiBold
                     ),
                     color = SpoolStudioColors.OnGraphite,
-                    maxLines = 1,
                     modifier = Modifier.weight(1.55f)
                 )
                 Icon(
@@ -209,7 +209,8 @@ fun SettingsSwitchRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = SpoolStudioColors.OnGraphite
+            color = SpoolStudioColors.OnGraphite,
+            modifier = Modifier.weight(1f).padding(end = 8.dp)
         )
 
         Switch(

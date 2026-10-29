@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -51,8 +53,6 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.focus.onFocusChanged
 import com.spoolstudio.app.utils.normalizeHexColor
@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.IntSize
 import com.spoolstudio.app.utils.PhotoColorDetector
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import android.graphics.ImageDecoder
 import android.os.Build
 import android.provider.MediaStore
@@ -261,14 +262,11 @@ fun ColorSelector(
     }
 
     if (showColorPicker) {
-        Dialog(
-            onDismissRequest = { showColorPicker = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
+        BoundedDialog(onDismissRequest = { showColorPicker = false }) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 28.dp),
+                    .testTag("color-wheel-dialog-content"),
                 shape = SpoolStudioShape.Dialog,
                 elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
                 colors = CardDefaults.cardColors(
@@ -277,7 +275,7 @@ fun ColorSelector(
                 border = BorderStroke(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f))
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -380,7 +378,7 @@ private fun ColorSelectorRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(46.dp),
+                .heightIn(min = 46.dp).padding(vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -397,7 +395,6 @@ private fun ColorSelectorRow(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = SpoolStudioColors.OnGraphite,
-                maxLines = 1,
                 modifier = Modifier.weight(1.25f)
             )
             if (trailing != null) {
@@ -439,7 +436,7 @@ private fun InlineColorTextField(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp),
+            .heightIn(min = 48.dp).padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

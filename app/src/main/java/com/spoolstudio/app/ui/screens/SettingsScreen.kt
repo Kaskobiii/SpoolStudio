@@ -734,7 +734,7 @@ private fun SettingsTextField(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(46.dp),
+                .heightIn(min = 46.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -745,7 +745,6 @@ private fun SettingsTextField(
                     lineHeight = 17.sp
                 ),
                 color = SpoolStudioColors.OnGraphite,
-                maxLines = 1,
                 modifier = Modifier.width(112.dp)
             )
             BasicTextField(
@@ -1039,7 +1038,7 @@ private fun SettingsInfoRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(42.dp),
+                .heightIn(min = 42.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1388,7 +1387,7 @@ private fun SettingsPrimaryButton(
         shape = SpoolStudioShape.Button,
         modifier = modifier
             .fillMaxWidth()
-            .height(44.dp),
+            .heightIn(min = 44.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = SpoolStudioColors.Gold,
             contentColor = Color.White,
@@ -1396,7 +1395,7 @@ private fun SettingsPrimaryButton(
             disabledContentColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.55f)
         )
     ) {
-        Text(text, maxLines = 1)
+        Text(text)
     }
 }
 
@@ -1413,7 +1412,7 @@ private fun SettingsSecondaryButton(
         shape = SpoolStudioShape.Button,
         modifier = modifier
             .fillMaxWidth()
-            .height(44.dp),
+            .heightIn(min = 44.dp),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = SpoolStudioColors.AccentCyan,
             disabledContentColor = SpoolStudioColors.OnGraphiteMuted.copy(alpha = 0.55f)
@@ -1423,6 +1422,6 @@ private fun SettingsSecondaryButton(
             color = if (enabled) SpoolStudioColors.GraphiteMuted else SpoolStudioColors.GraphiteMuted.copy(alpha = 0.45f)
         )
     ) {
-        Text(text, maxLines = 1)
+        Text(text)
     }
 }
