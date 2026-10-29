@@ -5,12 +5,13 @@
 # name = "Shared Spools"
 # description = "Spool owners, Paxx12 tag-link repair and explicit filament-profile sync."
 # author = "Kaskobiii"
-# version = "0.1.0"
+# version = "0.1.1"
 # ///
 """Standalone Orca plugin; networking and mapping logic can also be unit tested."""
 import html
 import json
 import re
+from queue import Empty, Full, Queue
 from urllib.error import HTTPError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
@@ -223,6 +224,40 @@ def escaped(value):
     return html.escape(str(value), quote=True)
 
 
+def show_plugin_dialog(ui, *, html, title, width, height):
+    """Return one form action from either supported Orca host UI interface.
+
+    create_window returns immediately and delivers callbacks on the UI thread.
+    Only the Script invocation worker waits here; the Orca UI stays responsive.
+    """
+    legacy_dialog = getattr(ui, "show_dialog", None)
+    if callable(legacy_dialog):
+        return legacy_dialog(html=html, title=title, width=width, height=height)
+    create_window = getattr(ui, "create_window", None)
+    if not callable(create_window) or not hasattr(ui, "WINDOW_MODAL"):
+        raise RuntimeError("This Orca build does not expose a supported plugin window API.")
+
+    replies = Queue(maxsize=1)
+
+    def finish(data=None):
+        try:
+            replies.put_nowait(data)
+        except Full:
+            pass  # Submission wins over a subsequent close notification.
+
+    window = create_window(html=html, title=title, width=width, height=height,
+                           style=ui.WINDOW_MODAL, on_submit=finish, on_close=finish)
+    try:
+        while True:
+            try:
+                return replies.get(timeout=0.2)
+            except Empty:
+                if not window.is_open():
+                    return None  # Host teardown can close without firing on_close.
+    finally:
+        window.close()
+
+
 def profile_options(profiles, selected):
     options = '<option value="">Choose exact profile…</option>'
     for name in profiles:
@@ -293,8 +328,9 @@ if orca is not None and hasattr(orca, "script"):
                 presets = bundle.filaments
                 profiles = sorted(presets.preset(i).name for i in range(presets.size())
                                   if presets.preset(i).is_visible and presets.preset(i).is_compatible)
-                data = orca.host.ui.show_dialog(html=render(config, spools, channels, profiles, printer, message),
-                                               title="Shared Spools", width=1180, height=780)
+                data = show_plugin_dialog(orca.host.ui,
+                                          html=render(config, spools, channels, profiles, printer, message),
+                                          title="Shared Spools", width=1180, height=780)
                 if not data:
                     return orca.ExecutionResult.success("Shared Spools closed.")
                 try:

@@ -5,11 +5,22 @@ Spools — owners, links and sync** from the Plugins dialog. This has automated
 tests, but has not been run inside a real Orca installation or against physical
 tags. The Android app is built separately.
 
+Version 0.1.1 fixes startup on Orca builds that expose the callback-based
+`create_window` API instead of `show_dialog`. Script startup, submit, cancel and
+host teardown are covered with a host-interface test double. A real Orca window
+test is still required.
+
 Install `shared_spools.py` using the Plugins dialog's local install option. For
 manual installation, put just that entry file in its own folder:
 `<Orca data directory>/orca_plugins/shared_spools/shared_spools.py`, then reload
 plugins/restart Orca. Keep the tests outside that installed folder. The plugin
 uses the standard library and has no dependencies.
+
+To update 0.1.0, deactivate the existing Shared Spools plugin, replace its
+installed `shared_spools.py` with the 0.1.1 file, click **Refresh** (or restart
+Orca), then activate it and press the green play button. Keep the installed
+folder name unchanged so the existing plugin configuration remains associated.
+If Orca is running on another PC, update that installation too.
 
 1. Open the plugin, enter your Spoolman and Moonraker URLs, and save connections.
    Use the actual Moonraker URL, commonly the printer's port 7125. Allow access
@@ -67,4 +78,4 @@ API references checked against the tagged Orca beta source:
 
 - [Preset selection implementation](https://github.com/OrcaSlicer/OrcaSlicer/blob/v2.5.0-beta/src/slic3r/plugin/host/PluginHostPresets.cpp)
 - [Plugin packaging](https://github.com/OrcaSlicer/OrcaSlicer_WIKI/blob/main/developer_reference/plugin_development/plugin_development.md)
-- [Host dialogs](https://github.com/OrcaSlicer/OrcaSlicer_WIKI/blob/main/developer_reference/plugin_development/api_reference/host_ui.md)
+- [Host window bindings](https://github.com/OrcaSlicer/OrcaSlicer/blob/v2.5.0-beta/src/slic3r/plugin/host/PluginHostUi.cpp)
