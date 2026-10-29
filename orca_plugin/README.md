@@ -1,81 +1,90 @@
-# Shared Spools for OrcaSlicer
+# Shared Spools for OrcaSlicer 0.2.0
 
-Experimental local Python plugin for standard OrcaSlicer 2.5 beta. Run **Shared
-Spools — owners, links and sync** from the Plugins dialog. This has automated
-tests, but has not been run inside a real Orca installation or against physical
-tags. The Android app is built separately.
+Experimental plugin for standard OrcaSlicer 2.5 beta. Run **Shared Spools — owners,
+links and sync** with the green Play button in Plugins. This version reduces the
+manual steps and keeps one window alive instead of closing and recreating it for
+every action.
 
-Version 0.1.1 fixes startup on Orca builds that expose the callback-based
-`create_window` API instead of `show_dialog`. Script startup, submit, cancel and
-host teardown are covered with a host-interface test double. A real Orca window
-test is still required.
+## What is automatic
 
-Install `shared_spools.py` using the Plugins dialog's local install option. For
-manual installation, put just that entry file in its own folder:
-`<Orca data directory>/orca_plugins/shared_spools/shared_spools.py`, then reload
-plugins/restart Orca. Keep the tests outside that installed folder. The plugin
-uses the standard library and has no dependencies.
+- Saved Spoolman and Moonraker connections reload when you reopen the plugin.
+- Addresses are saved before the first network request, so a network permission
+  prompt or failure does not discard them.
+- One modeless window displays loading, errors and results without reopening.
+- With **Automatically follow loaded spools** enabled (the default), the plugin
+  refreshes about every five seconds while its window is open and selects the
+  profiles for the currently loaded, linked spools. It checks the selected names
+  afterward. Closing the window stops automatic updates.
+- Automatic matching requires an exact product family: vendor, material and
+  variant, with `+` and `Plus` treated alike. A matching color-specific profile is
+  preferred, then a user profile; a black-specific profile is not used for a white
+  spool. A colorless exact-product profile can be used if no color-specific match
+  exists. Galaxy PLA is not a fallback for PLA Plus. Display-list order is ignored.
+- Ambiguous or missing matches pause selection. Choose **and remember** a profile
+  once for those products. Saved choices take priority and stay local to each PC,
+  Spoolman server and Orca printer preset. A missing saved profile is reported.
 
-To update 0.1.0, deactivate the existing Shared Spools plugin, replace its
-installed `shared_spools.py` with the 0.1.1 file, click **Refresh** (or restart
-Orca), then activate it and press the green play button. Keep the installed
-folder name unchanged so the existing plugin configuration remains associated.
-If Orca is running on another PC, update that installation too.
+**Orca's normal Sync button is unchanged.** Orca's script API does not expose a
+replacement for its native matching routine. Keep the plugin window open for its
+automatic follow mode; there is no need to press the native Sync button. If another
+action overwrites a loaded slot, the next successful refresh restores the matched
+profile, provided the four-slot layout remains intact. Pause automatic follow to
+make your own manual profile selections.
 
-1. Open the plugin, enter your Spoolman and Moonraker URLs, and save connections.
-   Use the actual Moonraker URL, commonly the printer's port 7125. Allow access
-   to those endpoints when Orca asks. This first version supports servers that
-   do not need an authentication header.
-2. Save an Owner on each physical spool. The same `spool.extra.owner` custom
-   field is used by Spool Studio Shared. Search/filter by owner in the dialog.
-3. Choose **and remember** an exact Orca profile for each Spoolman filament
-   product. Choices belong to the configured Spoolman server and current Orca
-   printer preset. Owners do not change print settings.
-4. Add four filament slots in Prepare. Review the extruder-to-slot numbers in
-   the plugin. Defaults are Extruder 1 → slot 1 through Extruder 4 → slot 4.
-5. Use **Sync shared spools** and review the proposed names. Loaded Spoolman IDs
-   come from Paxx12's `print_task_config.filament_spool_id`. Empty extruders
-   leave their corresponding Orca slots unchanged. Missing mappings stop sync;
-   the plugin never guesses from a vendor's first profile.
+## Install or update
 
-The plugin uses `orca.host.preset.filament.begin_update(slot, preset_name)` to
-select a profile through Orca's normal selection flow. It stages no setting
-changes. Builds without that API show an explanatory error; Owner and repair
-functions still work. If Orca cancels/rejects a later selection, earlier
-successful slot selections remain and are listed in the error. Review them.
+Download `shared_spools.py`. For an existing installation, deactivate Shared
+Spools, replace only its installed script, click **Refresh** or restart Orca, then
+activate and press Play. Keep the existing folder name to retain configuration.
+Update each PC separately. The Android APK is unchanged.
 
-This is a separate plugin action. Orca's built-in Sync button retains its own
-matching behavior. The plugin does not replace printer communication, upload
-G-code, change the printer's spool assignments, or intercept that built-in
-button. Unique filament IDs are not required for this name-based action;
-Filament ID Fixer remains useful for Orca's native matching workflow.
+For a new manual installation, put the entry file in its own folder:
+`<Orca data directory>/orca_plugins/shared_spools/shared_spools.py`.
+Keep test files outside the installed folder. The plugin uses Python's standard
+library and Orca's callback-based `create_window` API.
 
-## Repairing links
+1. Enter the full Spoolman URL, including any port, and the printer's Moonraker URL
+   (commonly port 7125). Save connections once. Allow network access to these
+   addresses when Orca asks. Servers requiring authentication headers are not
+   supported in this version.
+2. Have four filament slots in Prepare. Defaults map Extruder 1 → slot 1 through
+   Extruder 4 → slot 4. Empty printer extruders keep their current Orca profile.
+3. Leave automatic follow enabled and keep this modeless window open. Unambiguous
+   products need no remembered mapping or separate Sync click.
+4. Owner editing uses Spoolman's per-spool extra field `owner`, shared with Spool
+   Studio Shared. Owner filtering changes the list, not loaded-spool assignments.
 
-Expand **Repair a tag link**, choose the physical spool, and enter the Card UID
-reported by the printer or read in Spool Studio. Repair adds/verifies the native
-Spoolman tag on 0.27+ and the `card_uids` compatibility mirror used by Paxx12
-2.0.0. Earlier Spoolman versions use the mirror only. Other tags and extra fields
-are retained; remaining weight is never sent in these updates.
+## Tag links and data
 
-A UID attached to another spool is refused; review and move it explicitly in
-Spool Studio. A failed network operation may leave a partial link. Refresh and
-retry the same spool. Rescan the tag at the printer after a successful repair.
-Repair does not write NFC tag contents; use the Android app for that.
+Expand **Repair a tag link**, choose the physical spool and enter the Card UID
+reported by the printer or Spool Studio. Repair verifies the native Spoolman tag
+on 0.27+ and `card_uids`, the compatibility mirror used by Paxx12 2.0.0. Other tags
+and extra fields are retained; remaining weight is never sent in these edits.
+A UID belonging to another spool is refused. A failed request may have partly
+completed: refresh before retrying. Rescan a repaired tag at the printer. Repair
+does not write NFC contents; use the Android app for that.
 
-## Validation
+Loaded spool IDs come from Paxx12's `print_task_config.filament_spool_id`. Reported
+UIDs must match those spools. Changes to printer assignments are checked again
+before selecting profiles. The plugin changes filament slot selections through
+`orca.host.preset.filament.begin_update(slot, preset_name)`; it stages no preset
+setting changes, uploads no G-code and changes no printer spool assignments.
+Orca may prompt about unsaved edits. A cancelled or failed later selection leaves
+earlier successful selections in place and reports them. The window can be closed
+to stop automatic follow.
 
-```sh
-cd orca_plugin
-python3 -m unittest -v
-```
+## Validation and limitations
 
-Tests cover two-tag spools, owner edits, refused conflicts, partial verification,
-exact mappings, empty/missing slots and partial selections. Hardware testing and
-a real Orca plugin-load test are still required before relying on this version.
+Run `python3 -m unittest discover -s orca_plugin -v` from the repository root.
+Tests cover automatic PLA+/Plus matching, Galaxy rejection, ambiguity, persistence,
+reopening, network denial and recovery, one-window message processing, polling,
+read-back verification, two-tag repairs, owners and stale assignments. The browser
+preview exercises the rendered controls with simulated servers. These checks do
+not replace testing the release in a real Orca webview and on the printer.
 
-API references checked against the tagged Orca beta source:
+Source bindings checked against Orca's tagged beta:
 
-- [Preset selection implementation](https://github.com/OrcaSlicer/OrcaSlicer/blob/v2.5.0-beta/src/slic3r/plugin/host/PluginHostPresets.cpp)
-- [Plugin packaging](https://github.com/OrcaSlicer/OrcaSlicer_WIKI/blob/main/developer_reference/plugin_development/plugin_development.md)
-- [Host window bindings](https://github.com/OrcaSlicer/OrcaSlicer/blob/v2.5.0-beta/src/slic3r/plugin/host/PluginHostUi.cpp)
+- [Preset selection](https://github.com/OrcaSlicer/OrcaSlicer/blob/v2.5.0-beta/src/slic3r/plugin/host/PluginHostPresets.cpp)
+- [Window callbacks](https://github.com/OrcaSlicer/OrcaSlicer/blob/v2.5.0-beta/src/slic3r/plugin/host/PluginHostUi.cpp)
+- [Page messaging](https://github.com/OrcaSlicer/OrcaSlicer/blob/v2.5.0-beta/src/slic3r/GUI/Widgets/WebHosting.cpp)
+- [Native Sync matching](https://github.com/OrcaSlicer/OrcaSlicer/blob/v2.5.0-beta/src/libslic3r/PresetBundle.cpp)

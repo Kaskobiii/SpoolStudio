@@ -102,6 +102,8 @@ class HostUiTests(unittest.TestCase):
         class ScriptBase:
             def get_config(self):
                 return "{}"
+            def save_config(self, config):
+                return True
 
         fake_orca = SimpleNamespace(
             script=SimpleNamespace(ScriptPluginCapabilityBase=ScriptBase),
@@ -113,9 +115,11 @@ class HostUiTests(unittest.TestCase):
         module = importlib.util.module_from_spec(spec)
         with patch.dict("sys.modules", {"orca": fake_orca}):
             spec.loader.exec_module(module)
-        self.assertEqual(module.SharedSpoolsScript().execute(), "Shared Spools closed.")
-        self.assertEqual(len(ui.calls), 1)
-        self.assertIn("Spoolman URL", ui.calls[0]["html"])
+        ui.WINDOW_MODELESS = 0
+        with patch.object(module, "run_session") as run:
+            self.assertEqual(module.SharedSpoolsScript().execute(), "Shared Spools closed. Automatic sync stopped.")
+        session = run.call_args.args[1]
+        self.assertIn("Spoolman URL", session.page())
 
 
 if __name__ == "__main__":
