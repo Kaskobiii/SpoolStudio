@@ -1,3 +1,45 @@
+# Spool Studio Shared
+
+Personal fork of [GeorgHo/SpoolStudio](https://github.com/GeorgHo/SpoolStudio), based on v3.1.2.
+
+[Download Spool Studio Shared 3.2.0-beta2](https://github.com/Kaskobiii/SpoolStudio/releases/tag/v3.2.0-beta2-shared).
+
+This fork keeps a single filament variant across Spoolman (`filament.extra.variant`)
+and OpenSpool tags (`subtype`). For example, PLA + Plus is stored as material PLA,
+variant Plus; Plus Matte keeps both words. Older `material_modifier` values are
+read into the variant and normalized when that filament is saved. Existing records
+are not bulk migrated on startup.
+
+Each physical spool has an optional **Owner**, saved as the spool custom field
+`owner`. The form, spool list, search, and owner filter expose it. An owner edit
+preserves tag UIDs and other custom fields. Unchanged remaining weight is omitted
+from updates so background print consumption is retained.
+
+Tag writes and **Link scanned UID** read the spool back and verify both native
+Spoolman tags (0.27+) and the Paxx12 `card_uids` mirror. A partial write is reported
+as incomplete; retry linking the same spool instead of creating another one.
+Keep **Native tags only** off for Paxx12 2.0.0.
+
+Version 3.2.0-beta2 makes the spool picker compact: a small color dot, color/material/variant, Spoolman ID, and remaining grams. The owner filter uses the same readable selector style. Pickers close with an outside tap, Back, or the close button. Dialogs and form controls adapt to small screens and larger system text; long content scrolls instead of extending beyond the screen.
+
+The app installs as **Spool Studio Shared**, with application ID
+`com.kaskobiii.spoolstudio`, alongside the original. Configure the same Spoolman
+and Moonraker URLs after installation. No credentials are included in this repo.
+
+Build with Java 21 and Android SDK 36:
+
+```sh
+bash ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+```
+
+Use the debug APK for local testing. Automated tests cover variant preservation,
+owner edits, two-tag spools, partial pairing, unchanged weights, and rendered picker/dialog layouts at small window sizes and 2× text. Physical NFC
+and printer verification is still required.
+
+---
+
+The original upstream README follows.
+
 # Spool Studio
 
 ![Platform](https://img.shields.io/badge/Platform-Android-green)

@@ -15,6 +15,29 @@ fun parseRemainingWeight(value: String): Float? =
         ?.toFloatOrNull()
         ?.takeIf { it >= 0f }
 
+// Omitting an unchanged value lets Spoolman retain consumption reported since the
+// form was opened. An explicit correction, including zero, is still sent.
+fun remainingWeightForUpdate(requested: Float?, loaded: Float?): Float? =
+    requested?.takeIf { loaded == null || kotlin.math.abs(it - loaded) > 0.01f }
+
+fun hasFilamentSaveChanges(request: SpoolmanSaveRequest, selected: FilamentSpool): Boolean {
+    // Compare with what the form actually loaded: display rounding and missing
+    // server values must not turn an owner/location edit into a product edit.
+    request.filamentEdited?.let { return it || selected.needsVariantMigration }
+    val fields = com.spoolstudio.app.domain.models.spoolLinkSpoolmanFields(
+        request.material, request.variant, request.materialModifier
+    )
+    val tare = parseRemainingWeight(request.emptySpoolWeight)
+    return selected.needsVariantMigration ||
+        fields.material != selected.material || fields.variant != selected.variant ||
+        request.brand.trim() != selected.brand.trim() ||
+        request.colorName.trim() != selected.spoolmanName.orEmpty().trim() ||
+        normalizedColorHex(request.colorHex) != normalizedColorHex(selected.colorHex) ||
+        request.minTemp.toIntOrNull() != selected.minTemp ||
+        request.bedMinTemp.toIntOrNull() != selected.bedMinTemp ||
+        (tare != null && remainingWeightForUpdate(tare, selected.emptySpoolWeight) != null)
+}
+
 fun remainingWeightWarningThreshold(value: Float?): Int? = when {
     value == null -> null
     value <= 50f -> 50

@@ -53,20 +53,20 @@ class SpoolLinkFieldsTest {
     }
 
     @Test
-    fun spoolmanFieldsStoreMaterialModifierSeparately() {
+    fun spoolmanFieldsPutMaterialModifierInSharedVariant() {
         val fields = spoolLinkSpoolmanFields("PLA+", "Matte")
 
         assertEquals("PLA", fields.material)
-        assertEquals("Matte", fields.variant)
-        assertEquals("Plus", fields.materialModifier)
+        assertEquals("Plus Matte", fields.variant)
+        assertEquals("", fields.materialModifier)
     }
 
     @Test
-    fun tagFieldsOmitMaterialModifierForPrinterCompatibility() {
+    fun tagFieldsPreserveTheSameVariantAsSpoolman() {
         val fields = spoolLinkTagFields("PLA", "Matte", "Plus")
 
         assertEquals("PLA", fields.material)
-        assertEquals("Matte", fields.variant)
+        assertEquals("Plus Matte", fields.variant)
     }
 
     @Test

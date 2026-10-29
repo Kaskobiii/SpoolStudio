@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -285,68 +286,17 @@ private fun DarkSpoolmanDropdown(
 ) {
     val focusManager = LocalFocusManager.current
     Box(modifier = modifier.fillMaxWidth()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .clip(SpoolStudioShape.Small)
-                .background(SpoolStudioColors.GraphiteRaised)
-                .border(1.dp, SpoolStudioColors.GraphiteMuted, SpoolStudioShape.Small)
-                .clickable(enabled = !isLoading && filaments.isNotEmpty()) {
-                    focusManager.clearFocus()
-                    onExpandedChange(!expanded)
-                }
-                .padding(horizontal = 10.dp, vertical = 5.dp)
-        ) {
-            Text(
-                text = "Select from Spoolman",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, lineHeight = 10.sp),
-                color = SpoolStudioColors.OnGraphiteMuted,
-                maxLines = 1,
-                modifier = Modifier.align(Alignment.TopStart)
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.CenterStart)
-                    .padding(top = 8.dp, end = 76.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = displayOverride ?: selectedFilament?.let(::spoolmanDropdownLabel) ?: "Select from Spoolman",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
-                        lineHeight = 17.sp
-                    ),
-                    color = SpoolStudioColors.OnGraphite,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = null,
-                    tint = SpoolStudioColors.OnGraphiteMuted,
-                    modifier = Modifier.size(18.dp)
-                )
-
+        SpoolSelectionField(
+            label = "Select from Spoolman",
+            value = displayOverride ?: selectedFilament?.let(::spoolmanDropdownLabel) ?: "Select a spool",
+            details = if (showNewPill) "New spool" else selectedFilament?.let(::spoolmanDropdownDetails),
+            enabled = !isLoading && filaments.isNotEmpty(),
+            isLoading = isLoading,
+            onClick = {
+                focusManager.clearFocus()
+                onExpandedChange(!expanded)
             }
-
-            Box(
-                modifier = Modifier.align(Alignment.CenterEnd),
-                contentAlignment = Alignment.Center
-            ) {
-                when {
-                    isLoading -> CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                    showNewPill -> SelectorPill(text = "New", showDot = false)
-                    selectedFilament != null -> SelectorPill(text = "ID #${selectedFilament.id}", showDot = true)
-                }
-            }
-        }
+        )
 
         if (expanded) {
             SearchableDropdownDialog(
@@ -392,136 +342,37 @@ private fun DarkSpoolmanDropdown(
 }
 
 @Composable
-private fun SelectorPill(
-    text: String,
-    showDot: Boolean
-) {
-    val pillBackground = if (showDot) {
-        SpoolStudioColors.Graphite.copy(alpha = 0.72f)
-    } else {
-        SpoolStudioColors.AccentCyan.copy(alpha = 0.86f)
-    }
-    val pillBorder = if (showDot) {
-        SpoolStudioColors.GraphiteMuted.copy(alpha = 0.9f)
-    } else {
-        SpoolStudioColors.AccentCyan
-    }
-    val pillTextColor = if (showDot) {
-        SpoolStudioColors.OnGraphite
-    } else {
-        Color.White
-    }
-
-    Row(
-        modifier = Modifier
-            .clip(SpoolStudioShape.Small)
-            .background(pillBackground)
-            .border(1.dp, pillBorder, SpoolStudioShape.Small)
-            .padding(horizontal = 7.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (showDot) {
-            Box(
-                modifier = Modifier
-                    .size(7.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF57C75E))
-            )
-        }
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, lineHeight = 12.sp),
-            color = pillTextColor,
-            maxLines = 1
-        )
-    }
-}
-
-@Composable
-private fun SpoolmanDialogSpoolRow(
+internal fun SpoolmanDialogSpoolRow(
     filament: FilamentSpool,
     onClick: () -> Unit
 ) {
-    val materialParts = listOf(
-        filament.brand,
-        listOf(filament.material, filament.materialModifier)
-            .filter { it.isNotBlank() && !it.equals("None", ignoreCase = true) }
-            .joinToString(" "),
-        filament.variant
-    ).filter { it.isNotBlank() && !it.equals("None", ignoreCase = true) }
-    val title = filament.spoolmanName?.takeIf(String::isNotBlank) ?: filament.displayName
-    val subtitle = materialParts.joinToString(" / ")
-    val idText = filament.id?.let { "ID #$it" } ?: "No ID"
-
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
+            .testTag("spool-row-${filament.id}")
             .clip(SpoolStudioShape.Field)
             .background(SpoolStudioColors.GraphiteRaised.copy(alpha = 0.72f))
-            .border(
-                width = 1.dp,
-                color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f),
-                shape = SpoolStudioShape.Field
-            )
+            .border(1.dp, SpoolStudioColors.GraphiteMuted.copy(alpha = 0.85f), SpoolStudioShape.Field)
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.size(width = 56.dp, height = 60.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            SpoolStudioLogo(
-                color = dialogSpoolColor(filament.colorHex),
-                logoSize = 48.dp,
-                showTitle = false,
-                modifier = Modifier.padding(top = 6.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
+            Modifier.size(16.dp).clip(CircleShape)
+                .background(dialogSpoolColor(filament.colorHex))
+                .border(1.dp, SpoolStudioColors.OnGraphiteMuted, CircleShape)
+        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = SpoolStudioColors.OnGraphite,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                text = spoolmanDropdownLabel(filament),
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp),
+                fontWeight = FontWeight.SemiBold,
+                color = SpoolStudioColors.OnGraphite
             )
             Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = SpoolStudioColors.OnGraphiteMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Box(
-            modifier = Modifier
-                .clip(SpoolStudioShape.Small)
-                .background(SpoolStudioColors.Graphite.copy(alpha = 0.78f))
-                .border(
-                    width = 1.dp,
-                    color = SpoolStudioColors.GraphiteMuted.copy(alpha = 0.9f),
-                    shape = SpoolStudioShape.Small
-                )
-                .padding(horizontal = 10.dp, vertical = 6.dp)
-        ) {
-            Text(
-                text = idText,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = SpoolStudioColors.OnGraphite,
-                maxLines = 1
+                text = spoolmanDropdownDetails(filament),
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 18.sp),
+                color = SpoolStudioColors.OnGraphiteMuted
             )
         }
     }

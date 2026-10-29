@@ -18,5 +18,7 @@ data class SpoolmanSaveRequest(
     val remainingWeight: String,
     val emptySpoolWeight: String,
     val existingSpoolId: Int?,
-    val cardUid: String? = null
+    val cardUid: String? = null,
+    val owner: String? = null,
+    val filamentEdited: Boolean? = null
 )

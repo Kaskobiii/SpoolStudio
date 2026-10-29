@@ -19,6 +19,7 @@ fun buildSpoolModeSourceData(
 private fun FilamentSpool.toFormSourceData(): OpenSpoolData = OpenSpoolData(
     type = material,
     formMaterialModifier = materialModifier,
+    formOwner = owner,
     colorHex = null,
     brand = brand,
     minTemp = minTemp?.toString() ?: "200",

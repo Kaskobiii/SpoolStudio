@@ -22,6 +22,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
     var brand by mutableStateOf("Generic")
     var customBrand by mutableStateOf("")
     var location by mutableStateOf("")
+    var owner by mutableStateOf("")
     var customLocation by mutableStateOf("")
     var minTemp by mutableStateOf(defaultMaterial.defaultMinTemp.toString())
     var maxTemp by mutableStateOf(defaultMaterial.defaultMaxTemp.toString())
@@ -35,6 +36,16 @@ class SpoolFormState(private val defaultMaterial: Material) {
     var colorNameWasManuallyEdited by mutableStateOf(false)
     var isHexManuallySet by mutableStateOf(false)
     var pendingCardUid by mutableStateOf<String?>(null)
+    private var loadedFilament: Pair<Int?, List<String?>>? = null
+
+    private fun filamentFormValues(): List<String?> = listOf(
+        filamentType, customMaterial, materialModifier, variant, brand, customBrand,
+        colorHex, colorName, minTemp, maxTemp, bedMinTemp, bedMaxTemp, emptySpoolWeight
+    )
+
+    fun captureLoadedFilament(spoolId: Int?) {
+        loadedFilament = spoolId to filamentFormValues()
+    }
 
     fun editFilamentName(name: String) {
         colorName = name
@@ -53,6 +64,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
     }
 
     fun resetForNewSpool() {
+        loadedFilament = null
         colorHex = null
         colorName = ""
         filamentType = "PLA"
@@ -62,6 +74,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
         brand = "Generic"
         customBrand = ""
         clearLocation()
+        owner = ""
         minTemp = defaultMaterial.defaultMinTemp.toString()
         maxTemp = defaultMaterial.defaultMaxTemp.toString()
         bedMinTemp = defaultMaterial.defaultBedMinTemp.toString()
@@ -107,8 +120,11 @@ class SpoolFormState(private val defaultMaterial: Material) {
             emptySpoolWeight = emptySpoolWeight,
             spoolMode = spoolMode,
             selectedSpool = selectedSpool,
-            cardUid = pendingCardUid
-        )
+            cardUid = pendingCardUid,
+            owner = owner
+        ).copy(filamentEdited = loadedFilament
+            ?.takeIf { spoolMode == SpoolMode.UPDATE && it.first == selectedSpool?.id }
+            ?.let { it.second != filamentFormValues() })
 
     fun buildOpenSpoolTagData(spoolMode: SpoolMode, selectedSpool: FilamentSpool?): OpenSpoolData? =
         buildOpenSpoolTagData(

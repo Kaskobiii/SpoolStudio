@@ -128,7 +128,8 @@ fun buildSpoolmanSaveRequest(
     emptySpoolWeight: String,
     spoolMode: SpoolMode,
     selectedSpool: FilamentSpool?,
-    cardUid: String? = null
+    cardUid: String? = null,
+    owner: String? = null
 ): SpoolmanSaveRequest =
     SpoolmanSaveRequest(
         material = resolveMaterialName(filamentType, customMaterial),
@@ -147,7 +148,8 @@ fun buildSpoolmanSaveRequest(
         remainingWeight = remainingWeight,
         emptySpoolWeight = emptySpoolWeight,
         existingSpoolId = if (spoolMode == SpoolMode.UPDATE) selectedSpool?.id else null,
-        cardUid = cardUid
+        cardUid = cardUid,
+        owner = owner
     )
 
 fun hasSpoolmanSaveChanges(request: SpoolmanSaveRequest, selectedSpool: FilamentSpool?): Boolean {
@@ -192,6 +194,8 @@ fun hasSpoolmanSaveChanges(request: SpoolmanSaveRequest, selectedSpool: Filament
         requestedFields.variant.trim().ifBlank { "Basic" } != selectedSpool.variant.trim().ifBlank { "Basic" } ||
         requestedFields.materialModifier.trim() != selectedSpool.materialModifier.trim() ||
         request.brand.trim() != selectedSpool.brand.trim() ||
+        (request.owner != null && request.owner.trim() != selectedSpool.owner.orEmpty().trim()) ||
+        selectedSpool.needsVariantMigration ||
         normalizedColorHex(request.colorHex) != normalizedColorHex(selectedSpool.colorHex) ||
         requestedColorName != selectedColorName ||
         normalizedInt(request.minTemp) != selectedSpool.minTemp ||

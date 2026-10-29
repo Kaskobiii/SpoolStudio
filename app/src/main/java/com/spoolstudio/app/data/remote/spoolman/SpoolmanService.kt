@@ -677,7 +677,10 @@ class SpoolmanService(private val baseUrl: String) {
                 normalizeText(filament.name).equals(normalizedName, ignoreCase = true)
         }
         if (existing != null) {
-            return if (spoolWeight == null || weightsEqual(existing.spool_weight, spoolWeight)) {
+            val canonical = existing.material == normalizedMaterial &&
+                existing.extra.stringValue("variant") == normalizedVariant &&
+                existing.extra.stringValue("material_modifier").isNullOrBlank()
+            return if (canonical && (spoolWeight == null || weightsEqual(existing.spool_weight, spoolWeight))) {
                 existing
             } else {
                 updateFilament(
@@ -740,16 +743,9 @@ class SpoolmanService(private val baseUrl: String) {
             materialModifier = materialModifier,
             allowMaterialModifier = allowMaterialModifier
         )
-        val existingExtra = try {
-            val existingResponse = api.getFilament(id)
-            if (existingResponse.isSuccessful) {
-                existingResponse.body()?.extra.toRequestExtraMap()
-            } else {
-                mutableMapOf()
-            }
-        } catch (_: Exception) {
-            mutableMapOf()
-        }
+        val existing = api.getFilament(id).checked("Load filament before updating variant")
+            ?: throw IllegalStateException("Filament response was empty; variant was not changed")
+        val existingExtra = existing.extra.toRequestExtraMap()
         request["name"] = normalizeText(name).ifBlank { "Unknown" }
         request["material"] = fields.material
         request["vendor_id"] = vendorId
@@ -780,8 +776,11 @@ class SpoolmanService(private val baseUrl: String) {
         lotNr: String?,
         location: String? = null,
         remainingWeight: Float? = null,
-        comment: String? = null
+        comment: String? = null,
+        owner: String? = null
     ): SpoolmanSpool {
+        val cleanOwner = owner?.trim().orEmpty()
+        if (cleanOwner.isNotBlank()) ensureOwnerField()
         val response = api.createSpool(
             CreateSpoolRequest(
                 filament_id = filamentId,
@@ -789,7 +788,9 @@ class SpoolmanService(private val baseUrl: String) {
                 location = location,
                 remaining_weight = remainingWeight ?: 1000f,
                 comment = comment ?: "Created by Spool Studio",
-                extra = null
+                extra = cleanOwner.takeIf { it.isNotBlank() }?.let {
+                    mapOf("owner" to encodeSpoolmanExtraString(it))
+                }
             )
         )
         if (!response.isSuccessful) {
@@ -806,14 +807,26 @@ class SpoolmanService(private val baseUrl: String) {
         lotNr: String? = null,
         location: String? = null,
         remainingWeight: Float? = null,
-        comment: String? = null
+        comment: String? = null,
+        owner: String? = null
     ): SpoolmanSpool {
         val request = mutableMapOf<String, Any?>()
         filamentId?.let { request["filament_id"] = it }
         request["lot_nr"] = lotNr
         location?.let { request["location"] = it }
         remainingWeight?.let { request["remaining_weight"] = it }
-        request["comment"] = comment ?: "Created by Spool Studio"
+        request["comment"] = comment
+        if (owner != null) {
+            val current = api.getSpool(id).checked("Load spool before updating owner")
+                ?: throw IllegalStateException("Spool response was empty; owner was not changed")
+            val cleanOwner = owner.trim()
+            if (cleanOwner != current.extra.stringValue("owner").orEmpty()) {
+                if (cleanOwner.isNotBlank()) ensureOwnerField()
+                val extra = current.extra.toRequestExtraMap()
+                extra["owner"] = encodeSpoolmanExtraString(cleanOwner)
+                request["extra"] = extra
+            }
+        }
 
         val response = api.updateSpool(id, request)
         if (!response.isSuccessful) {
@@ -853,6 +866,36 @@ class SpoolmanService(private val baseUrl: String) {
         return matches.firstOrNull()?.let { FilamentSpool.fromSpoolman(it) }
     }
 
+    private suspend fun ensureOwnerField() {
+        ensureExtraTextField(
+            entityType = SPOOL_ENTITY_TYPE,
+            key = "owner",
+            name = "Owner",
+            order = 10,
+            defaultValue = encodeSpoolmanExtraString(""),
+            errorContext = "Spool owner field"
+        )
+    }
+
+    suspend fun assignAndVerifyCardUidToSpool(spoolId: Int, cardUid: String, moveExisting: Boolean = false) {
+        assignCardUidToSpool(spoolId, cardUid, moveExisting)
+        verifyCardUidLink(spoolId, cardUid)
+    }
+
+    suspend fun verifyCardUidLink(spoolId: Int, cardUid: String) {
+        val uid = canonicalTagUid(cardUid)
+        val nativeSupported = requireTagMode()
+        val spool = api.getSpool(spoolId).checked("Verify tag link")
+            ?: throw IllegalStateException("Tag link could not be verified: empty spool response")
+        check(spool.id == spoolId) { "Tag link could not be verified: server returned another spool" }
+        if (nativeSupported) check(spool.tags.orEmpty().any { canonicalTagUid(it.uid) == uid }) {
+            "UID $uid is missing from spool #$spoolId's native tags. Retry Link scanned UID."
+        }
+        if (!nativeOnly) check(uid in parseCardUids(spool.extra.stringValue("card_uids"))) {
+            "UID $uid is missing from spool #$spoolId's Card UIDs. Paxx12 cannot resolve this tag yet. Retry Link scanned UID."
+        }
+    }
+
     suspend fun assignCardUidToSpool(spoolId: Int, cardUid: String, moveExisting: Boolean = false) {
         val normalizedUid = canonicalTagUid(cardUid)
         if (requireTagMode()) {
@@ -884,9 +927,12 @@ class SpoolmanService(private val baseUrl: String) {
             val errorText = targetResponse.errorBody()?.string()
             throw IllegalStateException("Spool could not be loaded for card UID update (${targetResponse.code()}): $errorText")
         }
+        val target = targetResponse.body()
+            ?: throw IllegalStateException("Target spool was empty; UID was not assigned")
 
         var changed = false
-        fetchAllRawSpools(includeArchived = true).forEach { spool ->
+        val candidates = fetchAllRawSpools(includeArchived = true).filterNot { it.id == spoolId } + target
+        candidates.forEach { spool ->
             val id = spool.id ?: return@forEach
             val currentUids = parseCardUids(spool.extra.stringValue("card_uids") ?: spool.extra.stringValue("card_uid"))
             val nextUids = if (id == spoolId) {

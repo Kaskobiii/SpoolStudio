@@ -43,7 +43,11 @@ class SpoolmanSaveRepository(
         }
 
         val cleanEmptySpoolWeight = parseRemainingWeight(request.emptySpoolWeight)
-        val vendor = service.createOrFindVendor(request.brand, cleanEmptySpoolWeight)
+        val productUnchanged = actionMode == SpoolMode.UPDATE &&
+            input.selectedSpool?.let { !hasFilamentSaveChanges(request, it) } == true
+        val vendorId = if (productUnchanged) null else
+            service.createOrFindVendor(request.brand, cleanEmptySpoolWeight).id
+                ?: throw IllegalStateException("Vendor id missing")
         val filamentFields = spoolLinkSpoolmanFields(
             material = request.material,
             variant = request.variant,
@@ -61,7 +65,7 @@ class SpoolmanSaveRepository(
                 service = service,
                 input = input,
                 resolvedLotNr = resolvedLotNr,
-                vendorId = vendor.id ?: throw IllegalStateException("Vendor id missing"),
+                vendorId = vendorId,
                 material = filamentFields.material,
                 variant = filamentFields.variant,
                 materialModifier = filamentFields.materialModifier,
@@ -77,7 +81,7 @@ class SpoolmanSaveRepository(
                 service = service,
                 input = input,
                 resolvedLotNr = resolvedLotNr,
-                vendorId = vendor.id ?: throw IllegalStateException("Vendor id missing"),
+                vendorId = vendorId ?: throw IllegalStateException("Vendor id missing"),
                 material = filamentFields.material,
                 variant = filamentFields.variant,
                 materialModifier = filamentFields.materialModifier,
@@ -95,7 +99,7 @@ class SpoolmanSaveRepository(
         val linkedSpool = if (uid.isNotBlank()) {
             finalSpool.id?.let { spoolId ->
                 try {
-                    service.assignCardUidToSpool(spoolId, uid)
+                    service.assignAndVerifyCardUidToSpool(spoolId, uid)
                 } catch (e: kotlinx.coroutines.CancellationException) { throw e
                 } catch (e: Exception) {
                     // The spool already exists. Return it so retrying does not create a second one.
@@ -120,7 +124,7 @@ class SpoolmanSaveRepository(
         service: SpoolmanService,
         input: SpoolmanSaveInput,
         resolvedLotNr: String,
-        vendorId: Int,
+        vendorId: Int?,
         material: String,
         variant: String,
         materialModifier: String,
@@ -139,9 +143,9 @@ class SpoolmanSaveRepository(
         val currentFilamentId = input.selectedSpool?.filamentId
             ?: throw IllegalStateException("Current filament id missing")
 
-        val usageCount = service.countSpoolsUsingFilament(currentFilamentId)
-
-        val targetFilamentId = if (usageCount <= 1) {
+        val targetFilamentId = if (input.selectedSpool != null && !hasFilamentSaveChanges(request, input.selectedSpool)) {
+            currentFilamentId
+        } else if (service.countSpoolsUsingFilament(currentFilamentId) <= 1) {
             service.updateFilament(
                 id = currentFilamentId,
                 name = cleanColorName,
@@ -149,7 +153,7 @@ class SpoolmanSaveRepository(
                 variant = variant,
                 materialModifier = materialModifier,
                 allowMaterialModifier = request.allowMaterialModifier,
-                vendorId = vendorId,
+                vendorId = vendorId ?: throw IllegalStateException("Vendor id missing"),
                 colorHex = cleanColorHex,
                 nozzleTemp = nozzleTemp,
                 bedTemp = bedTemp,
@@ -162,7 +166,7 @@ class SpoolmanSaveRepository(
                 variant = variant,
                 materialModifier = materialModifier,
                 allowMaterialModifier = request.allowMaterialModifier,
-                vendorId = vendorId,
+                vendorId = vendorId ?: throw IllegalStateException("Vendor id missing"),
                 colorHex = cleanColorHex,
                 nozzleTemp = nozzleTemp,
                 bedTemp = bedTemp,
@@ -175,8 +179,9 @@ class SpoolmanSaveRepository(
             filamentId = targetFilamentId,
             lotNr = resolvedLotNr,
             location = request.location.trim().ifBlank { null },
-            remainingWeight = cleanRemainingWeight ?: input.selectedSpool?.remainingWeight,
-            comment = request.comment.trim().ifBlank { null }
+            remainingWeight = remainingWeightForUpdate(cleanRemainingWeight, input.selectedSpool?.remainingWeight),
+            comment = request.comment.trim().ifBlank { null },
+            owner = request.owner
         )
 
         return service.findFilamentBySpoolId(spoolId.toString())
@@ -217,7 +222,8 @@ class SpoolmanSaveRepository(
             lotNr = resolvedLotNr.ifBlank { null },
             location = request.location.trim().ifBlank { null },
             remainingWeight = cleanRemainingWeight ?: input.selectedSpool?.remainingWeight ?: filament.weight,
-            comment = request.comment.trim().ifBlank { null }
+            comment = request.comment.trim().ifBlank { null },
+            owner = request.owner
         )
 
         return service.findFilamentBySpoolId(createdSpool.id?.toString() ?: "")

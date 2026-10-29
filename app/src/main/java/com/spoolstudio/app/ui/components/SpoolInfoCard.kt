@@ -2,6 +2,8 @@ package com.spoolstudio.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,11 +36,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.spoolstudio.app.domain.models.FilamentSpool
 import com.spoolstudio.app.ui.remainingWeightWarningThreshold
 import com.spoolstudio.app.ui.theme.SpoolStudioShape
@@ -77,8 +78,9 @@ fun SpoolInfoCard(
     }
 
     if (showDialog) {
-        Dialog(onDismissRequest = { showDialog = false }) {
+        BoundedDialog(onDismissRequest = { showDialog = false }) {
             Surface(
+                modifier = Modifier.fillMaxWidth().testTag("spool-info-dialog-content"),
                 shape = SpoolStudioShape.Dialog,
                 tonalElevation = 8.dp,
                 shadowElevation = 12.dp,
@@ -86,7 +88,8 @@ fun SpoolInfoCard(
             ) {
                 Column(
                     modifier = Modifier
-                        .width(340.dp)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                         .padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
@@ -96,6 +99,7 @@ fun SpoolInfoCard(
                         verticalAlignment = Alignment.Top
                     ) {
                         Row(
+                            modifier = Modifier.weight(1f),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -123,14 +127,15 @@ fun SpoolInfoCard(
                                 )
                             }
 
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
                                         text = "Spool Info",
-                                        style = MaterialTheme.typography.headlineSmall
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        modifier = Modifier.weight(1f)
                                     )
 
                                     if (isRefreshing) {
