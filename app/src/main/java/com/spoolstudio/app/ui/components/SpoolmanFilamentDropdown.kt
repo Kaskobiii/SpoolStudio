@@ -451,7 +451,8 @@ private fun SpoolmanDialogSpoolRow(
         filament.variant
     ).filter { it.isNotBlank() && !it.equals("None", ignoreCase = true) }
     val title = filament.spoolmanName?.takeIf(String::isNotBlank) ?: filament.displayName
-    val subtitle = materialParts.joinToString(" / ")
+    val subtitle = (materialParts + listOfNotNull(filament.owner?.takeIf { it.isNotBlank() }?.let { "Owner: $it" }))
+        .joinToString(" / ")
     val idText = filament.id?.let { "ID #$it" } ?: "No ID"
 
     Row(

@@ -27,7 +27,9 @@ data class FilamentSpool(
     val lastUsed: String? = null,
     val cardUids: List<String> = emptyList(),
     val isPaxx12FieldFormat: Boolean = false,
-    val nativeTagUids: List<String> = emptyList()
+    val nativeTagUids: List<String> = emptyList(),
+    val owner: String? = null,
+    val needsVariantMigration: Boolean = false
 ) {
     val displayName: String
         get() = listOf(
@@ -108,13 +110,20 @@ data class FilamentSpool(
                 spoolmanName = spool.filament.name,
                 filamentId = spool.filament.id,
                 comment = spool.comment,
+                owner = spool.extra.stringValue("owner"),
+                needsVariantMigration = paxx12Variant != spoolStudioFields.variant ||
+                    spool.filament.material != spoolStudioFields.material ||
+                    !spool.filament.extra.stringValue("material_modifier").isNullOrBlank(),
                 firstUsed = spool.first_used,
                 lastUsed = spool.last_used,
                 nativeTagUids = spool.tags.orEmpty().map { it.uid },
                 cardUids = (spool.tags.orEmpty().map { it.uid } + parseCardUids(
                     spool.extra.stringValue("card_uids") ?: spool.extra.stringValue("card_uid")
                 )).distinct(),
-                isPaxx12FieldFormat = !hasLegacyMaterialLayout && !paxx12Variant.isNullOrBlank()
+                isPaxx12FieldFormat = !hasLegacyMaterialLayout &&
+                    paxx12Variant == spoolStudioFields.variant &&
+                    spool.filament.material == spoolStudioFields.material &&
+                    spool.filament.extra.stringValue("material_modifier").isNullOrBlank()
             )
         }
 
@@ -128,6 +137,7 @@ data class FilamentSpool(
                 variant = spoolStudioFields.variant,
                 materialModifier = spoolStudioFields.materialModifier,
                 brand = spool.brand,
+                owner = spool.formOwner,
                 location = null,
                 colorHex = normalizeHexColor(spool.colorHex),
                 minTemp = spool.minTemp.toIntOrNull() ?: material?.defaultMinTemp,

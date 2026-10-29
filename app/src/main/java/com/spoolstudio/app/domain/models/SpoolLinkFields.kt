@@ -109,23 +109,26 @@ fun spoolLinkSpoolmanFields(
     allowMaterialModifier: Boolean = true
 ): SpoolStudioFilamentFields {
     val materialParts = splitMaterialModifier(material)
-    val variantParts = splitVariantModifier(variant)
-    val baseMaterial = OpenSpoolMaterialMapper.toOpenSpoolType(materialParts.material, variantParts.material)
+    val combinedVariant = canonicalFilamentVariant(materialParts.modifier, materialModifier, variant)
+    val baseMaterial = OpenSpoolMaterialMapper.toOpenSpoolType(materialParts.material, combinedVariant)
         ?: materialParts.material.ifBlank { "PLA" }
-    val modifier = if (allowMaterialModifier) {
-        materialModifier?.trim()?.ifBlank { null }
-            ?: materialParts.modifier.ifBlank { null }
-            ?: variantParts.modifier
-    } else {
-        ""
-    }
 
+    // Paxx12 and OpenSpool share one subtype. Preserve legacy modifiers there even
+    // when the old optional material_modifier custom field is unavailable.
     return SpoolStudioFilamentFields(
         material = baseMaterial,
-        variant = variantParts.material.ifBlank { "Basic" },
-        materialModifier = modifier.trim()
+        variant = combinedVariant,
+        materialModifier = ""
     )
 }
+
+fun canonicalFilamentVariant(vararg parts: String?): String =
+    parts.flatMap { it.orEmpty().trim().split(Regex("\\s+")) }
+        .filter { it.isNotBlank() && !it.equals("Basic", ignoreCase = true) && !it.equals("None", ignoreCase = true) }
+        .map { if (it == "+" || it.equals("Plus", ignoreCase = true)) "Plus" else it }
+        .distinctBy { it.uppercase() }
+        .joinToString(" ")
+        .ifBlank { "Basic" }
 
 fun spoolLinkTagFields(
     material: String?,

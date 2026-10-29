@@ -3,7 +3,8 @@ package com.spoolstudio.app.ui.components
 import com.spoolstudio.app.domain.models.FilamentSpool
 
 fun spoolmanDropdownLabel(filament: FilamentSpool): String {
-    return "${filament.brand} - ${filament.spoolmanName} - ${filament.displayName}"
+    val owner = filament.owner?.takeIf { it.isNotBlank() }?.let { " - Owner: $it" }.orEmpty()
+    return "${filament.brand} - ${filament.spoolmanName} - ${filament.displayName}$owner"
 }
 
 fun spoolmanDropdownListLabel(filament: FilamentSpool): String {
@@ -28,6 +29,7 @@ fun filterSpoolmanDropdownFilaments(
             filament.displayName,
             filament.variant,
             filament.location.orEmpty(),
+            filament.owner.orEmpty(),
             filament.lotNr.orEmpty(),
             filament.colorHex.orEmpty()
         ).any { value ->

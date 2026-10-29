@@ -1,3 +1,46 @@
+# Spool Studio Shared
+
+Personal fork of [GeorgHo/SpoolStudio](https://github.com/GeorgHo/SpoolStudio), based on v3.1.2.
+
+This fork keeps a single filament variant across Spoolman (`filament.extra.variant`)
+and OpenSpool tags (`subtype`). For example, PLA + Plus is stored as material PLA,
+variant Plus; Plus Matte keeps both words. Older `material_modifier` values are
+read into the variant and normalized when that filament is saved. Existing records
+are not bulk migrated on startup.
+
+Each physical spool has an optional **Owner**, saved as the spool custom field
+`owner`. The form, spool list, search, and owner filter expose it. An owner edit
+preserves tag UIDs and other custom fields. Unchanged remaining weight is omitted
+from updates so background print consumption is retained.
+
+Tag writes and **Link scanned UID** read the spool back and verify both native
+Spoolman tags (0.27+) and the Paxx12 `card_uids` mirror. A partial write is reported
+as incomplete; retry linking the same spool instead of creating another one.
+Keep **Native tags only** off for Paxx12 2.0.0.
+
+The app installs as **Spool Studio Shared**, with application ID
+`com.kaskobiii.spoolstudio`, alongside the original. Configure the same Spoolman
+and Moonraker URLs after installation. No credentials are included in this repo.
+
+Build with Java 21 and Android SDK 36:
+
+```sh
+bash ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+```
+
+Use the debug APK for local testing. Automated tests cover variant preservation,
+owner edits, two-tag spools, partial pairing, and unchanged weights. Physical NFC
+and printer verification is still required.
+
+An experimental [Shared Spools Orca plugin](orca_plugin/README.md) provides owner
+editing, link repair and a separate action that selects your saved exact profile
+for each loaded spool. The plugin has automated tests but still needs a real
+Orca load test. The Android app does not change OrcaSlicer's built-in matcher.
+
+---
+
+The original upstream README follows.
+
 # Spool Studio
 
 ![Platform](https://img.shields.io/badge/Platform-Android-green)

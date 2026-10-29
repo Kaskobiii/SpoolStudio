@@ -17,6 +17,7 @@ fun SpoolFormState.applySpoolSource(
             ?: sourceSpool.colorHex?.let(::suggestColorName)
             ?: ""
     brand = sourceSpool.brand
+    owner = sourceSpool.owner.orEmpty()
 
     val loadedLocation = sourceSpool.location.orEmpty().trim()
     if (loadedLocation.isBlank()) {
@@ -48,5 +49,5 @@ fun SpoolFormState.applySpoolSource(
     colorHexInput = colorHex ?: ""
     // Existing product names are not color suggestions, even if they happen to match one.
     colorNameWasManuallyEdited = !sourceSpool.spoolmanName.isNullOrBlank()
-    pendingCardUid = sourceSpool.cardUids.firstOrNull()
+    pendingCardUid = sourceSpool.cardUids.firstOrNull().takeIf { spoolMode == SpoolMode.UPDATE }
 }

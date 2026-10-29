@@ -16,7 +16,8 @@ class SpoolModeHelpersTest {
         val data = buildSpoolModeSourceData(source, null)!!
         val reloaded = FilamentSpool.fromOpenSpool(data)
         assertEquals("PETG", reloaded.material)
-        assertEquals("2.0", reloaded.materialModifier)
+        assertEquals("2.0", reloaded.variant)
+        assertEquals("", reloaded.materialModifier)
         assertNull(data.cardUid)
         assertNull(data.spoolId)
     }
@@ -29,7 +30,7 @@ class SpoolModeHelpersTest {
         )
         val result = buildSpoolModeSourceData(null, read)!!
         assertNull(result.cardUid)
-        assertEquals("2.0", FilamentSpool.fromOpenSpool(result).materialModifier)
+        assertEquals("2.0", FilamentSpool.fromOpenSpool(result).variant)
     }
 
     @Test

@@ -106,3 +106,7 @@ lint/tmp/
 *.keystore
 keystore.pwd
 *-keystore.pwd
+
+# Python companion plugin test output
+__pycache__/
+*.pyc

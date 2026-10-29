@@ -118,18 +118,32 @@ fun SpoolFormCard(
     onRefreshSelectedSpool: (Int) -> Unit,
     onRefreshSpoolmanCatalogIfStale: () -> Unit
 ) {
+    var ownerFilter by remember { mutableStateOf<String?>(null) }
+    val ownerNames = spools.mapNotNull { it.owner?.takeIf(String::isNotBlank) }.distinct().sorted()
+    val visibleSpools = spools.filter { ownerFilter == null || it.owner.orEmpty() == ownerFilter }
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = SpoolStudioDimens.ScreenHorizontalPadding, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        CompactDropdownRow(
+            label = "Show owner",
+            value = ownerFilter?.ifBlank { "Unassigned" } ?: "All owners",
+            options = listOf("All owners", "Unassigned") + ownerNames,
+            onSelected = { ownerFilter = when (it) {
+                "All owners" -> null
+                "Unassigned" -> ""
+                else -> it
+            } }
+        )
+
         SpoolHeroPanel(
             form = form,
             selectedSpool = selectedSpool,
             lastScannedCardUid = lastScannedCardUid,
             spoolMode = spoolMode,
-            spools = spools,
+            spools = visibleSpools,
             spoolmanUrl = spoolmanUrl,
             currentSpoolId = currentSpoolId,
             isLoadingSpools = isLoadingSpools,
@@ -186,13 +200,11 @@ private fun SpoolDataCard(
             trailing = listOf("Other")
         )
     }
-    val materialModifierOptions = remember {
-        listOf("None", "Plus", "HS", "HF", "LW", "Aero", "2.0", "2.0 Plus", "Extra", "Super", "Rapid")
-    }
     val variantOptions = remember(availableVariants) {
         prioritizedOptions(
             preferred = listOf("Basic"),
-            values = VariantDatabase.variants.filter { it.isNotBlank() } + availableVariants,
+            values = VariantDatabase.variants.filter { it.isNotBlank() } +
+                listOf("Plus", "HS", "HF", "Plus Matte", "Plus Silk", "2.0", "2.0 Plus", "Rapid") + availableVariants,
             trailing = emptyList()
         )
     }
@@ -212,11 +224,6 @@ private fun SpoolDataCard(
     }
     val emptySpoolWeightSuggestions = remember(spools) {
         buildEmptySpoolWeightSuggestions(spools)
-    }
-    LaunchedEffect(materialModifierFieldEnabled) {
-        if (!materialModifierFieldEnabled) {
-            form.materialModifier = ""
-        }
     }
 
     val remainingWarning = remainingWeightWarningThreshold(form.remainingWeight)
@@ -279,19 +286,10 @@ private fun SpoolDataCard(
             }
 
             CompactDropdownRow(
-                label = "Material modifier",
-                value = form.materialModifier.ifBlank { "None" },
-                options = materialModifierOptions,
-                enabled = materialModifierFieldEnabled,
-                onSelected = { modifier ->
-                    form.materialModifier = if (modifier == "None") "" else modifier
-                }
-            )
-
-            CompactDropdownRow(
                 label = "Variant",
                 value = form.variant.ifBlank { "Basic" },
                 options = variantOptions,
+                allowCustom = true,
                 onSelected = { form.variant = it.ifBlank { "Basic" } }
             )
 
@@ -397,6 +395,14 @@ private fun SpoolDataCard(
                     onValueChange = { form.emptySpoolWeight = sanitizeWeightInput(it) }
                 )
             }
+
+            CompactTextRow(
+                label = "Owner",
+                value = form.owner,
+                placeholder = "Unassigned",
+                showEditIcon = true,
+                onValueChange = { form.owner = it.take(80) }
+            )
 
             CompactDropdownRow(
                 label = "Location",
@@ -526,7 +532,8 @@ private fun CompactDropdownRow(
     onSelected: (String) -> Unit,
     onOpen: () -> Unit = {},
     showTopDivider: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    allowCustom: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -578,7 +585,9 @@ private fun CompactDropdownRow(
                 title = label,
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it },
-                items = filteredOptions,
+                items = if (allowCustom && searchQuery.isNotBlank() && searchQuery !in filteredOptions) {
+                    listOf(searchQuery.trim()) + filteredOptions
+                } else filteredOptions,
                 itemLabel = { it },
                 onItemSelected = { option ->
                     onSelected(option)
@@ -2005,6 +2014,7 @@ private fun FilamentSummaryList(form: SpoolFormState) {
         SummaryRow("Variant", form.variant.ifBlank { "Basic" })
         SummaryDivider()
         SummaryRow("Brand", form.brand.ifBlank { "Generic" })
+        SummaryRow("Owner", form.owner.ifBlank { "Unassigned" })
         SummaryDivider()
         SummaryRow(
             label = "Color",

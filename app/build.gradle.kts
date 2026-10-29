@@ -11,11 +11,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.spoolstudio.com.spoolstudio.app"
+        applicationId = "com.kaskobiii.spoolstudio"
         minSdk = 29
         targetSdk = 36
-        versionCode = 26
-        versionName = "3.1.2"
+        versionCode = 27
+        versionName = "3.2.0-beta1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

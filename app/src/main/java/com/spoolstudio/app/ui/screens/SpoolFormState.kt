@@ -22,6 +22,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
     var brand by mutableStateOf("Generic")
     var customBrand by mutableStateOf("")
     var location by mutableStateOf("")
+    var owner by mutableStateOf("")
     var customLocation by mutableStateOf("")
     var minTemp by mutableStateOf(defaultMaterial.defaultMinTemp.toString())
     var maxTemp by mutableStateOf(defaultMaterial.defaultMaxTemp.toString())
@@ -62,6 +63,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
         brand = "Generic"
         customBrand = ""
         clearLocation()
+        owner = ""
         minTemp = defaultMaterial.defaultMinTemp.toString()
         maxTemp = defaultMaterial.defaultMaxTemp.toString()
         bedMinTemp = defaultMaterial.defaultBedMinTemp.toString()
@@ -107,7 +109,8 @@ class SpoolFormState(private val defaultMaterial: Material) {
             emptySpoolWeight = emptySpoolWeight,
             spoolMode = spoolMode,
             selectedSpool = selectedSpool,
-            cardUid = pendingCardUid
+            cardUid = pendingCardUid,
+            owner = owner
         )
 
     fun buildOpenSpoolTagData(spoolMode: SpoolMode, selectedSpool: FilamentSpool?): OpenSpoolData? =

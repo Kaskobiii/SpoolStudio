@@ -430,7 +430,7 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch {
             isLinkingScannedUid = true
             try {
-                SpoolmanService(spoolmanUrl).assignCardUidToSpool(spoolId, normalizedUid, moveExisting = true)
+                SpoolmanService(spoolmanUrl).assignAndVerifyCardUidToSpool(spoolId, normalizedUid, moveExisting = true)
                 val refreshed = spoolmanCatalogRepository.findBySpoolId(spoolmanUrl, spoolId)
                 if (refreshed != null) {
                     selectedSpool = refreshed
@@ -469,7 +469,7 @@ class MainViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                SpoolmanService(spoolmanUrl).assignCardUidToSpool(spoolId, normalizedUid)
+                SpoolmanService(spoolmanUrl).assignAndVerifyCardUidToSpool(spoolId, normalizedUid)
                 val refreshed = spoolmanCatalogRepository.findBySpoolId(spoolmanUrl, spoolId)
                 if (refreshed != null) {
                     selectedSpool = refreshed
