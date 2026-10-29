@@ -36,6 +36,16 @@ class SpoolFormState(private val defaultMaterial: Material) {
     var colorNameWasManuallyEdited by mutableStateOf(false)
     var isHexManuallySet by mutableStateOf(false)
     var pendingCardUid by mutableStateOf<String?>(null)
+    private var loadedFilament: Pair<Int?, List<String?>>? = null
+
+    private fun filamentFormValues(): List<String?> = listOf(
+        filamentType, customMaterial, materialModifier, variant, brand, customBrand,
+        colorHex, colorName, minTemp, maxTemp, bedMinTemp, bedMaxTemp, emptySpoolWeight
+    )
+
+    fun captureLoadedFilament(spoolId: Int?) {
+        loadedFilament = spoolId to filamentFormValues()
+    }
 
     fun editFilamentName(name: String) {
         colorName = name
@@ -54,6 +64,7 @@ class SpoolFormState(private val defaultMaterial: Material) {
     }
 
     fun resetForNewSpool() {
+        loadedFilament = null
         colorHex = null
         colorName = ""
         filamentType = "PLA"
@@ -111,7 +122,9 @@ class SpoolFormState(private val defaultMaterial: Material) {
             selectedSpool = selectedSpool,
             cardUid = pendingCardUid,
             owner = owner
-        )
+        ).copy(filamentEdited = loadedFilament
+            ?.takeIf { spoolMode == SpoolMode.UPDATE && it.first == selectedSpool?.id }
+            ?.let { it.second != filamentFormValues() })
 
     fun buildOpenSpoolTagData(spoolMode: SpoolMode, selectedSpool: FilamentSpool?): OpenSpoolData? =
         buildOpenSpoolTagData(

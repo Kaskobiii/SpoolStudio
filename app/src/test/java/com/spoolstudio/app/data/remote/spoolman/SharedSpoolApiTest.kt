@@ -1,6 +1,15 @@
 package com.spoolstudio.app.data.remote.spoolman
 
 import com.google.gson.JsonParser
+import com.google.gson.Gson
+import com.spoolstudio.app.data.local.MaterialDatabase
+import com.spoolstudio.app.domain.models.FilamentSpool
+import com.spoolstudio.app.domain.models.SpoolmanSpool
+import com.spoolstudio.app.ui.SpoolmanSaveRepository
+import com.spoolstudio.app.ui.SpoolmanSaveInput
+import com.spoolstudio.app.ui.SpoolMode
+import com.spoolstudio.app.ui.screens.SpoolFormState
+import com.spoolstudio.app.ui.screens.applySpoolSource
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -114,5 +123,37 @@ class SharedSpoolApiTest {
         }
         assertEquals(1, server.requestCount)
         assertEquals("GET", server.takeRequest().method)
+    }
+
+    @Test fun ownerOnlySaveDoesNotTouchVendorFilamentOrConsumedWeight() = runBlocking {
+        val selected = FilamentSpool.fromSpoolman(Gson().fromJson(spool(), SpoolmanSpool::class.java))
+            .copy(cardUids = emptyList(), nativeTagUids = emptyList())
+        val form = SpoolFormState(MaterialDatabase.getMaterial("PLA")!!)
+        form.applySpoolSource(selected, SpoolMode.UPDATE, emptyList())
+        form.owner = "Owner B"
+        val current = spool().replace("892", "891")
+        val updated = current.replace("Owner A", "Owner B")
+        reply("""{"version":"0.27.0"}""")
+        reply("""[{"key":"card_uids","field_type":"text"}]""")
+        reply("""[{"key":"variant","field_type":"text"}]""")
+        reply(current)
+        reply("""[{"key":"owner","field_type":"text"}]""")
+        reply(updated); reply(updated)
+        val result = SpoolmanSaveRepository { service }.save(SpoolmanSaveInput(
+            server.url("/").toString(), form.buildSaveRequest(SpoolMode.UPDATE, selected),
+            SpoolMode.UPDATE, selected, null, "1"
+        ))
+        assertEquals("Owner B", result.finalSpool.owner)
+        assertEquals(891f, result.finalSpool.remainingWeight)
+        repeat(server.requestCount) {
+            val request = server.takeRequest()
+            assertFalse(request.path!!.contains("/vendor"))
+            assertFalse(request.path!!.contains("/filament/"))
+            if (request.method == "PATCH") {
+                val body = JsonParser().parse(request.body.readUtf8()).asJsonObject
+                assertFalse(body.has("remaining_weight"))
+                assertTrue(body.getAsJsonObject("extra").get("card_uids").asString.contains(second))
+            }
+        }
     }
 }

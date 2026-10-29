@@ -50,4 +50,5 @@ fun SpoolFormState.applySpoolSource(
     // Existing product names are not color suggestions, even if they happen to match one.
     colorNameWasManuallyEdited = !sourceSpool.spoolmanName.isNullOrBlank()
     pendingCardUid = sourceSpool.cardUids.firstOrNull().takeIf { spoolMode == SpoolMode.UPDATE }
+    captureLoadedFilament(sourceSpool.id)
 }

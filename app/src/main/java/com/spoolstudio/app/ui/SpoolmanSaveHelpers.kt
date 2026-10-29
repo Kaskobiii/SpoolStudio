@@ -21,6 +21,9 @@ fun remainingWeightForUpdate(requested: Float?, loaded: Float?): Float? =
     requested?.takeIf { loaded == null || kotlin.math.abs(it - loaded) > 0.01f }
 
 fun hasFilamentSaveChanges(request: SpoolmanSaveRequest, selected: FilamentSpool): Boolean {
+    // Compare with what the form actually loaded: display rounding and missing
+    // server values must not turn an owner/location edit into a product edit.
+    request.filamentEdited?.let { return it || selected.needsVariantMigration }
     val fields = com.spoolstudio.app.domain.models.spoolLinkSpoolmanFields(
         request.material, request.variant, request.materialModifier
     )
@@ -32,7 +35,7 @@ fun hasFilamentSaveChanges(request: SpoolmanSaveRequest, selected: FilamentSpool
         normalizedColorHex(request.colorHex) != normalizedColorHex(selected.colorHex) ||
         request.minTemp.toIntOrNull() != selected.minTemp ||
         request.bedMinTemp.toIntOrNull() != selected.bedMinTemp ||
-        (tare != null && tare != selected.emptySpoolWeight)
+        (tare != null && remainingWeightForUpdate(tare, selected.emptySpoolWeight) != null)
 }
 
 fun remainingWeightWarningThreshold(value: Float?): Int? = when {

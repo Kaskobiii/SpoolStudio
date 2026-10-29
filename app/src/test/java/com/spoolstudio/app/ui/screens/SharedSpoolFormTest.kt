@@ -64,4 +64,15 @@ class SharedSpoolFormTest {
         form.variant = "Silk"
         assertTrue(hasFilamentSaveChanges(form.buildSaveRequest(SpoolMode.UPDATE, spool), spool))
     }
+
+    @Test fun ownerEditRetainsMissingProductFieldsAndRoundedTare() {
+        val spool = spool().copy(minTemp = null, maxTemp = null, bedMinTemp = null,
+            bedMaxTemp = null, spoolmanName = null, emptySpoolWeight = 180.123f)
+        val form = form()
+        form.applySpoolSource(spool, SpoolMode.UPDATE, emptyList())
+        form.owner = "Owner B"
+        assertFalse(hasFilamentSaveChanges(form.buildSaveRequest(SpoolMode.UPDATE, spool), spool))
+        form.emptySpoolWeight = "185.00"
+        assertTrue(hasFilamentSaveChanges(form.buildSaveRequest(SpoolMode.UPDATE, spool), spool))
+    }
 }
