@@ -107,6 +107,5 @@ lint/tmp/
 keystore.pwd
 *-keystore.pwd
 
-# Python companion plugin test output
-__pycache__/
-*.pyc
+# Kotlin compiler caches
+.kotlin/
